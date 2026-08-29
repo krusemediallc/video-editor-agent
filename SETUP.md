@@ -105,7 +105,15 @@ candidate issues. Skipped gracefully when unset; QA layers 1/2/4 still run.
   CLI. Any screen recorder substitutes — the skill's sync-marker + crop recipe is
   recorder-agnostic.
 
-### 10. pyJianYingDraft venv — capcut-export (work-in-progress)
+### 10. Arcads API (arcads-broll) — generated B-roll & motion graphics
+
+- CHECK: `grep -c "^ARCADS_API_KEY=.\+" .env` → 1, and the companion pack cloned:
+  `git clone https://github.com/krusemediallc/arcads-claude-code` (its
+  `arcads-external-api` skill carries the routes + per-model prompt library).
+- FIX: key from your Arcads account (sign up: https://arcads.ai/?via=claude-code).
+  Generation spends Arcads credits — the skill estimates and asks before firing.
+
+### 11. pyJianYingDraft venv — capcut-export (work-in-progress)
 
 Only for exporting a finished edit into a CapCut desktop draft.
 
