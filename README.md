@@ -68,6 +68,8 @@ footage/ + (optional) reference reel + brand/site + ratio
 | ElevenLabs API key | SFX + music generation | `ELEVENLABS_API_KEY` in `.env` at repo root |
 | here-now skill + credentials | canvas review delivery | agent docs at https://here.now/docs (fetch with `User-Agent: claude`); credentials live in `~/.herenow/credentials` |
 | `GEMINI_API_KEY` (optional) | video-qa's deeper vision layer (L3) | skip if unset; QA still runs its other layers |
+| Puppeteer (optional) | scripted website screenshots/B-roll (`broll-capture`) | `npm i puppeteer` in the repo; or use a connected browser MCP instead |
+| Screen Studio (optional) | high-fidelity real-browser B-roll (`broll-capture` Lane C) | any screen recorder works; Screen Studio + its CLI is the polished path |
 | pyJianYingDraft in a venv (optional) | CapCut draft export | only needed for the capcut-export handoff |
 
 External dependencies are documented, not vendored — nothing in this repo
@@ -85,6 +87,7 @@ ships a copy of HyperFrames, whisper models, or ffmpeg.
 | `video-review-canvas` | here.now review page with frame-accurate scrubber + timeline comments; reads notes back per version. |
 | `edl-tighten` | Surgical silence/pacing cuts with a full timeline remap (captions/cards/SFX stay synced). |
 | `reel-recut` | Spec-driven short-form recut style. |
+| `broll-capture` | Website screenshots + B-roll: Puppeteer/Playwright-MCP full-page shots, scripted-scroll recordings, and a Screen Studio real-browser lane for automation-blocked sites. |
 | `capcut-export` | Layered export into a CapCut draft via pyJianYingDraft. |
 
 ## Limitations (honest)

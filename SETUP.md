@@ -8,9 +8,12 @@ command and a FIX. Run all checks at once with:
 bash scripts/check-setup.sh
 ```
 
-**MCP servers: none required.** This pack is deliberately MCP-free — everything runs
-through the CLI (ffmpeg, node, python) and plain REST APIs (ElevenLabs, optional
-Gemini, optional here.now). If your client has MCPs connected, they are ignored.
+**MCP servers: none required.** Everything runs through the CLI (ffmpeg, node,
+python) and plain REST APIs (ElevenLabs, optional Gemini, optional here.now).
+One optional convenience: if your client has a **browser MCP** (Playwright or a
+browser extension) connected, the `broll-capture` skill will use it for no-code
+website screenshots and for driving your real logged-in browser — but the bundled
+Puppeteer script covers the same ground without any MCP.
 
 ---
 
@@ -92,7 +95,17 @@ candidate issues. Skipped gracefully when unset; QA layers 1/2/4 still run.
 - FIX: key from https://aistudio.google.com. Model override: `GEMINI_QA_MODEL`
   (default `gemini-flash-latest`).
 
-### 9. pyJianYingDraft venv — capcut-export (work-in-progress)
+### 9. Website capture (broll-capture)
+
+- **Puppeteer** for the bundled screenshot script: CHECK
+  `node -e "require.resolve('puppeteer')"` from the repo root; FIX `npm i puppeteer`.
+  (Or skip it and use a connected browser MCP.)
+- **Screen Studio** (macOS, optional): highest-fidelity B-roll of your real browser.
+  CHECK `ls /Applications/Screen\ Studio.app` and `command -v screenstudio` for its
+  CLI. Any screen recorder substitutes — the skill's sync-marker + crop recipe is
+  recorder-agnostic.
+
+### 10. pyJianYingDraft venv — capcut-export (work-in-progress)
 
 Only for exporting a finished edit into a CapCut desktop draft.
 
