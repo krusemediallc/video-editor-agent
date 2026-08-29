@@ -27,7 +27,7 @@ PUB="${HERENOW_PUBLISH:-$HOME/.agents/skills/here-now/scripts/publish.sh}"
 if [ -f .env ] && grep -q "^GEMINI_API_KEY=.\+" .env; then ok "GEMINI_API_KEY in .env"
 else opt "GEMINI_API_KEY — video-qa L3 (SETUP.md #8)"; fi
 "$HOME/.venvs/capcut/bin/python" -c "import pyJianYingDraft" 2>/dev/null \
-  && ok "pyJianYingDraft venv" || opt "pyJianYingDraft — capcut-export (SETUP.md #9)"
+  && ok "pyJianYingDraft venv" || opt "pyJianYingDraft — capcut-export (SETUP.md #10)"
 command -v whisper-cli >/dev/null && ok "whisper-cli" || opt "whisper-cli — faster QA seam probes"
 node -e "require.resolve('puppeteer')" 2>/dev/null && ok "puppeteer" || opt "puppeteer — broll-capture screenshots (SETUP.md #9)"
 [ -d "/Applications/Screen Studio.app" ] && ok "Screen Studio" || opt "Screen Studio — Lane C B-roll (SETUP.md #9)"
