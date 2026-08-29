@@ -1,5 +1,11 @@
 # Claude Code — session rules for Video Editor Agent
 
+## First session on a new machine
+
+0. Run `bash scripts/check-setup.sh`. Any FAIL: walk **SETUP.md** with the user
+   before starting an edit — every stage's tools and APIs are listed there with
+   check + fix commands. (No MCP servers are required by this pack.)
+
 ## Every session
 
 1. Read **MASTER_CONTEXT.md** if it exists — brand palette/fonts/voice, default

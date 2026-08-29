@@ -48,7 +48,8 @@ footage/ + (optional) reference reel + brand/site + ratio
 ## Quickstart
 
 1. Clone this repo and open it in Claude Code.
-2. Install the prerequisites below.
+2. Work through **[SETUP.md](SETUP.md)** (or run `bash scripts/check-setup.sh`) —
+   it lists every tool and API with a check + fix for each. No MCP servers needed.
 3. Copy `.env.example` to `.env` and paste your `ELEVENLABS_API_KEY`.
 4. Drop your raw footage into `footage/` (and a reference reel if you have
    one).
