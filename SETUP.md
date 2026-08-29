@@ -10,10 +10,10 @@ bash scripts/check-setup.sh
 
 **MCP servers: none required.** Everything runs through the CLI (ffmpeg, node,
 python) and plain REST APIs (ElevenLabs, optional Gemini, optional here.now).
-One optional convenience: if your client has a **browser MCP** (Playwright or a
-browser extension) connected, the `broll-capture` skill will use it for no-code
-website screenshots and for driving your real logged-in browser — but the bundled
-Puppeteer script covers the same ground without any MCP.
+Two optional MCP-powered skills exist: `broll-capture` can use a **browser MCP**
+(Playwright or a browser extension) for no-code website captures — the bundled
+Puppeteer script covers the same ground without one — and `openart-broll` uses the
+**OpenArt MCP** for AI-generated footage/overlays. Everything else is MCP-free.
 
 ---
 
@@ -105,7 +105,15 @@ candidate issues. Skipped gracefully when unset; QA layers 1/2/4 still run.
   CLI. Any screen recorder substitutes — the skill's sync-marker + crop recipe is
   recorder-agnostic.
 
-### 10. Arcads API (arcads-broll) — generated B-roll & motion graphics
+### 10. OpenArt MCP (openart-broll) — generated footage & overlays
+
+- CHECK (in-session, not shell-checkable): the `openart_*` tools are present and
+  `openart_account_get` returns your plan + credit balance.
+- FIX: connect the OpenArt MCP in your client (claude.ai → Connectors, or Claude
+  Code MCP settings). No API key — auth rides on the connection. Generation spends
+  OpenArt credits; the skill quotes with `openart_model_cost` and asks before firing.
+
+### 10b. Arcads API (arcads-broll) — generated B-roll & motion graphics
 
 - CHECK: `grep -c "^ARCADS_API_KEY=.\+" .env` → 1, and the companion pack cloned:
   `git clone https://github.com/krusemediallc/arcads-claude-code` (its

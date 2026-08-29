@@ -88,7 +88,7 @@ Invoke **branded-ad-edit** and run its phases in order:
 2. **Transcribe** with whisper-cli (word timestamps). The transcript drives
    captions, card-per-line timing, and the storyboard beats.
 3. **Storyboard from the style guide.** Every spoken line maps to a beat:
-   card, full-bleed cut, B-roll (capture real screens with `broll-capture`; GENERATE clips/overlays with `arcads-broll`), or breather — per `STYLE-GUIDE.md` (or house
+   card, full-bleed cut, B-roll (capture real screens with `broll-capture`; GENERATE clips/overlays with `openart-broll` (MCP) or `arcads-broll` (REST)), or breather — per `STYLE-GUIDE.md` (or house
    defaults). Write the storyboard down before composing; it is the artifact
    the user approves.
 4. **Compose.** Hand-authored composition (framing, cards, cuts, motion) +

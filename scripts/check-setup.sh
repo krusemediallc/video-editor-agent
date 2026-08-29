@@ -31,8 +31,9 @@ else opt "GEMINI_API_KEY — video-qa L3 (SETUP.md #8)"; fi
 command -v whisper-cli >/dev/null && ok "whisper-cli" || opt "whisper-cli — faster QA seam probes"
 node -e "require.resolve('puppeteer')" 2>/dev/null && ok "puppeteer" || opt "puppeteer — broll-capture screenshots (SETUP.md #9)"
 [ -d "/Applications/Screen Studio.app" ] && ok "Screen Studio" || opt "Screen Studio — Lane C B-roll (SETUP.md #9)"
+printf "  NOTE  OpenArt MCP (openart-broll) — verify in-session: openart_account_get (SETUP.md #10)\n"
 if [ -f .env ] && grep -q "^ARCADS_API_KEY=.\+" .env; then ok "ARCADS_API_KEY in .env"
-else opt "ARCADS_API_KEY — arcads-broll generated B-roll (SETUP.md #10)"; fi
+else opt "ARCADS_API_KEY — arcads-broll generated B-roll (SETUP.md #10b)"; fi
 
 echo
 echo "$pass passed, $fail required missing, $warn optional skipped"

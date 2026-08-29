@@ -70,7 +70,8 @@ footage/ + (optional) reference reel + brand/site + ratio
 | `GEMINI_API_KEY` (optional) | video-qa's deeper vision layer (L3) | skip if unset; QA still runs its other layers |
 | Puppeteer (optional) | scripted website screenshots/B-roll (`broll-capture`) | `npm i puppeteer` in the repo; or use a connected browser MCP instead |
 | Screen Studio (optional) | high-fidelity real-browser B-roll (`broll-capture` Lane C) | any screen recorder works; Screen Studio + its CLI is the polished path |
-| Arcads (optional) | AI-generated B-roll / motion graphics (`arcads-broll`) | `ARCADS_API_KEY` in `.env` + clone [arcads-claude-code](https://github.com/krusemediallc/arcads-claude-code) alongside |
+| OpenArt MCP (optional) | AI-generated B-roll / talking heads / overlays (`openart-broll`) | connect the OpenArt MCP in your client; verify with `openart_account_get` — no API key |
+| Arcads (optional) | alternative generation backend (`arcads-broll`) | `ARCADS_API_KEY` in `.env` + clone [arcads-claude-code](https://github.com/krusemediallc/arcads-claude-code) alongside |
 | pyJianYingDraft in a venv (optional) | CapCut draft export | only needed for the capcut-export handoff |
 
 External dependencies are documented, not vendored — nothing in this repo
@@ -89,7 +90,8 @@ ships a copy of HyperFrames, whisper models, or ffmpeg.
 | `edl-tighten` | Surgical silence/pacing cuts with a full timeline remap (captions/cards/SFX stay synced). |
 | `reel-recut` | Spec-driven short-form recut style. |
 | `broll-capture` | Website screenshots + B-roll: Puppeteer/Playwright-MCP full-page shots, scripted-scroll recordings, and a Screen Studio real-browser lane for automation-blocked sites. |
-| `arcads-broll` | GENERATED B-roll + screen-blend motion-graphic overlays via the Arcads external API (Seedance/Sora/Veo/Kling/Nano Banana) — companion pack: [arcads-claude-code](https://github.com/krusemediallc/arcads-claude-code). |
+| `openart-broll` | GENERATED B-roll, identity-referenced talking heads, and screen-blend overlays via the **OpenArt MCP** (Seedance/Kling/Wan/Gemini Omni/Nano Banana) — the pipeline's primary generation lane. |
+| `arcads-broll` | Alternative generation backend via the Arcads external API (REST) — companion pack: [arcads-claude-code](https://github.com/krusemediallc/arcads-claude-code). |
 | `capcut-export` | Layered export into a CapCut draft via pyJianYingDraft. |
 
 ## Limitations (honest)
