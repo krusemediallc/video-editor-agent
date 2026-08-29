@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Media working dirs — footage in, renders out. Keep the dirs, ignore contents.
+footage/*
+!footage/.gitkeep
+outputs/*
+!outputs/.gitkeep
+
+# Per-project scratch
+my-video/
+analysis/
+
+# Media files at repo root (skill assets in .claude/skills/**/assets stay tracked)
+/*.mp4
+/*.mov
+
+# Dependencies / OS noise
+node_modules/
+.DS_Store
+
+__pycache__/
+*.pyc

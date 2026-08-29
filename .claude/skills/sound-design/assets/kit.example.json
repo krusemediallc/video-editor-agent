@@ -1,0 +1,18 @@
+{
+  "normalize_db": -3,
+  "min_peak_db": -12,
+  "effects": [
+    { "name": "whoosh-soft", "duration": 0.7, "prompt": "short soft airy whoosh, UI card sliding in, clean swipe" },
+    { "name": "swoosh-in", "duration": 0.6, "prompt": "fast whip swoosh transition, energetic, short" },
+    { "name": "pop-click", "duration": 0.5, "prompt": "a single loud clean UI pop click, bubble pop, punchy" },
+    { "name": "stamp-slam", "duration": 0.8, "prompt": "loud heavy thud slam impact, stamp hitting a desk, punchy bass" },
+    { "name": "cash-count", "duration": 1.2, "prompt": "fast cash register counter rapidly ticking up, ends with a ding" },
+    { "name": "impact-boom", "duration": 0.9, "prompt": "deep cinematic bass impact hit, punchy sub drop, very short" },
+    { "name": "cha-ching", "duration": 1.0, "prompt": "classic cash register cha-ching, money win sound, single" },
+    { "name": "clock-tick", "duration": 1.8, "prompt": "fast stopwatch ticking, urgent, dry, no music" },
+    { "name": "shimmer-reveal", "duration": 1.1, "prompt": "soft glassy shimmer sweep, elegant logo reveal, bright" },
+    { "name": "star-ding", "duration": 0.6, "prompt": "loud bright single bell ding, achievement chime, crisp" },
+    { "name": "power-down", "duration": 1.8, "prompt": "video game power down, energy draining away, descending falling pitch whine, deflating, ends in a low thud, sharp attack" },
+    { "name": "sub-drop", "duration": 1.2, "prompt": "massive cinematic sub bass drop, falling pitch, punchy, no music" }
+  ]
+}

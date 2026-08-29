@@ -1,0 +1,179 @@
+<!doctype html>
+<!--
+  branded-ad-edit STARTER TEMPLATE — copy to <project>/index-template.html and fill in.
+  Search for «FILL» markers. This skeleton is contract-compliant: transforms-only motion,
+  CSS initial-hides, unique media ids, one paused registered timeline, all assets local.
+  Placeholders {{CAPTION_SPANS}} / {{CAPTION_TWEENS}} / {{SFX_ELEMENTS}} are injected by
+  your build script (see scripts/generate-captions.mjs bundled with the skill).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /* fonts: copy woff2 files into public/fonts/ (talking-head-recut skill assets or fontsource) */
+      @font-face { font-family: "Inter"; src: url("fonts/Inter-400-latin.woff2") format("woff2"); font-weight: 400; font-display: block; }
+      @font-face { font-family: "Inter"; src: url("fonts/Inter-700-latin.woff2") format("woff2"); font-weight: 700; font-display: block; }
+      @font-face { font-family: "Inter"; src: url("fonts/Inter-800-latin.woff2") format("woff2"); font-weight: 800; font-display: block; }
+      @font-face { font-family: "Inter"; src: url("fonts/Inter-900-latin.woff2") format("woff2"); font-weight: 900; font-display: block; }
+
+      :root {
+        /* «FILL» brand tokens from the site scrape (references/design.md §1) */
+        --brand-accent: #168bf8; --brand-accent-deep: #0044ff; --brand-accent-soft: #4da3ff;
+        --bg-dark: #05070c; --panel: #0b1220; --panel-2: #101a2e;
+        --green: #65f094; --red: #ff5959; --gold: #ffb02e; --muted: #8ea0b8;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark);
+        font-family: "Inter", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      #stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+      /* backdrop: brand-dark gradient + faint grid (never dead black behind solo/full modes) */
+      #backdrop { position: absolute; inset: 0; background:
+          radial-gradient(900px 700px at 50% 12%, color-mix(in srgb, var(--brand-accent) 16%, transparent), transparent 60%),
+          linear-gradient(180deg, color-mix(in srgb, var(--bg-dark) 92%, var(--brand-accent)) 0%, var(--bg-dark) 55%); }
+      #backdrop::after { content: ""; position: absolute; inset: 0; background-image:
+          linear-gradient(rgba(142,160,184,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(142,160,184,0.05) 1px, transparent 1px); background-size: 90px 90px; }
+
+      /* band crop — CSS base top:1080px; ALL movement via y transforms on #video-wrap */
+      .video-wrapper { position: absolute; left: 0; top: 1080px; width: 1080px; height: 840px; overflow: hidden; background: #000; }
+      .video-wrapper video { width: 100%; height: 100%; object-fit: cover; }
+
+      /* full-bleed crop — hidden until a fullhim segment reveals it */
+      .video-full { position: absolute; inset: 0; overflow: hidden; visibility: hidden; opacity: 0; background: #000; }
+      .video-full video { width: 100%; height: 100%; object-fit: cover; }
+      #vignette-full { position: absolute; inset: 0; opacity: 0; pointer-events: none;
+        background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 22%, transparent 60%, rgba(0,0,0,0.78) 100%); }
+
+      /* retention: top progress bar */
+      #progress { position: absolute; left: 0; top: 0; width: 1080px; height: 8px; z-index: 80;
+        background: linear-gradient(90deg, var(--brand-accent-deep), var(--brand-accent));
+        transform-origin: left center; transform: scaleX(0); }
+
+      /* card hosts */
+      .card-host { position: absolute; pointer-events: none; overflow: hidden; }
+      .card-host .card { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+      /* shared card pieces — extend per design (references/design.md §4) */
+      .sq { padding: 70px 64px 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; width: 100%; height: 100%; }
+      .kicker { font-weight: 800; font-size: 34px; letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase; }
+      .chip { display: inline-flex; align-items: center; gap: 18px; font-weight: 800; font-size: 46px; color: #fff;
+        background: var(--panel-2); border: 3px solid rgba(142,160,184,0.25); border-radius: 22px; padding: 26px 44px; }
+      .stamp { font-weight: 900; font-size: 72px; letter-spacing: 0.06em; color: var(--red); border: 8px solid var(--red);
+        border-radius: 18px; padding: 10px 34px; transform: rotate(-7deg); text-transform: uppercase;
+        background: color-mix(in srgb, var(--bg-dark) 92%, transparent); }
+      .shot-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,0.55); }
+      .browser { background: var(--panel); border: 2px solid rgba(142,160,184,0.22); border-radius: 22px; overflow: hidden; box-shadow: 0 30px 90px rgba(0,0,0,0.6); }
+      .browser .bar { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 22px; background: var(--panel-2); border-bottom: 1px solid rgba(142,160,184,0.18); }
+      .browser .bar i { width: 16px; height: 16px; border-radius: 50%; }
+      .browser .bar i:nth-child(1) { background: #ff5f57; } .browser .bar i:nth-child(2) { background: #febc2e; } .browser .bar i:nth-child(3) { background: #28c840; }
+      .browser .bar .url { margin-left: 14px; font-size: 22px; font-weight: 700; color: var(--muted); background: var(--panel); border-radius: 10px; padding: 6px 18px; }
+      .browser video { display: block; width: 100%; height: calc(100% - 54px); object-fit: cover; object-position: top; }
+
+      /* «FILL» per-card CSS, all scoped:  .card[data-card-id="card-01"] .foo { … } */
+
+      /* «FILL» initial-hide: EVERY element that animates in later goes in this list.
+         CSS, not tl.set(...,0) — zero-duration sets at position 0 don't paint frame 0. */
+      #c01-example-el { opacity: 0; }
+
+      /* karaoke captions (classes consumed by scripts/generate-captions.mjs output) */
+      #captions { position: absolute; inset: 0; pointer-events: none; }
+      .cap { position: absolute; left: 40px; width: 1000px; text-align: center; font-weight: 800; font-size: 78px;
+        line-height: 1.14; color: #fff; visibility: hidden; opacity: 0;
+        text-shadow: 0 4px 10px rgba(0,0,0,0.85), 0 12px 40px rgba(0,0,0,0.6); }
+      .cap em { font-style: normal; font-weight: 900; }
+      .cap em.r { color: var(--red); } .cap em.g { color: var(--green); } .cap em.b { color: var(--brand-accent-soft); }
+      .cap-split { top: 880px; } .cap-solo { top: 1440px; } .cap-fullhim { top: 1500px; } .cap-full { top: 1560px; }
+    </style>
+  </head>
+  <body>
+    <!-- «FILL» composition id + duration everywhere DUR appears -->
+    <div id="stage" data-composition-id="branded-ad" data-start="0" data-duration="DUR"
+         data-fps="30" data-width="1080" data-height="1920">
+      <div id="backdrop"></div>
+
+      <div class="video-wrapper" id="video-wrap">
+        <video id="bg-video" src="input-video.mp4" muted playsinline data-start="0" data-duration="DUR" data-track-index="1"></video>
+      </div>
+      <audio id="source-audio" src="input-video.mp4" data-start="0" data-duration="DUR" data-track-index="10" data-volume="1"></audio>
+
+      <div class="video-full" id="video-full">
+        <video id="full-video" src="input-video-vert.mp4" muted playsinline data-start="0" data-duration="DUR" data-track-index="4"></video>
+      </div>
+      <div id="vignette-full"></div>
+      <div id="progress"></div>
+
+      <!-- SFX audio elements + music bed (generated — see scripts/generate-sfx.py + references/audio.md) -->
+{{SFX_ELEMENTS}}
+
+      <!-- «FILL» one card-host per storyboard card. Host bounds by mode:
+           split = 0,0,1080,1080 · solo/fullhim/full overlays = 0,0,1080,1920.
+           B-roll <video> inside a card needs class="clip", unique id, its own data-start/duration, track-index 3. -->
+      <div class="card-host clip" data-card-id="card-01" data-start="0" data-duration="3.0" data-track-index="2"
+           style="left:0;top:0;width:1080px;height:1080px;visibility:hidden;opacity:0;">
+        <div class="card" data-card-id="card-01">
+          <div class="root"><!-- «FILL» --></div>
+        </div>
+      </div>
+
+      <div id="captions" data-track-index="5">
+{{CAPTION_SPANS}}
+      </div>
+
+      <script src="vendor/gsap.min.js"></script>
+      <script>
+        (function () {
+          var tl = window.gsap.timeline({ paused: true });
+          var Q = function (t) { return Math.round(t * 30) / 30; };
+
+          function enter(sel, at, dur) {
+            tl.set(sel, { visibility: "visible" }, Q(at));
+            tl.fromTo(sel, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: dur || 0.3, ease: "power2.out" }, Q(at));
+          }
+          function exit(sel, at, dur) {
+            tl.to(sel, { opacity: 0, duration: dur || 0.22, ease: "power2.in" }, Q(at));
+            tl.set(sel, { visibility: "hidden" }, Q(at + (dur || 0.22)));
+          }
+          function pop(sel, at, dur, scaleFrom) {
+            tl.fromTo(sel, { opacity: 0, scale: scaleFrom || 0.7 }, { opacity: 1, scale: 1, duration: dur || 0.4, ease: "back.out(1.7)" }, Q(at));
+          }
+          function rise(sel, at, dur) {
+            tl.fromTo(sel, { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: dur || 0.45, ease: "power2.out" }, Q(at));
+          }
+          function countUp(sel, from, to, at, dur, fmt) {
+            var o = { v: from };
+            tl.to(o, { v: to, duration: dur, ease: "power2.out", onUpdate: function () {
+              var el = document.querySelector(sel); if (!el) return;
+              if (fmt === "$") el.textContent = "$" + Math.round(o.v);
+              else if (fmt === "%") el.textContent = Math.round(o.v) + "%";
+              else if (fmt === ",+") el.textContent = Math.round(o.v).toLocaleString("en-US") + "+";
+              else el.textContent = String(Math.round(o.v));
+            } }, Q(at));
+          }
+
+          /* ── framing: «FILL» per storyboard (references/composition.md §4) ──
+             split→solo:    tl.to("#video-wrap", { y: -540, duration: 0.5, ease: "power2.inOut" }, Q(t));
+             solo→split:    tl.to("#video-wrap", { y: 0,    duration: 0.5, ease: "power2.inOut" }, Q(t));
+             split→fullhim: set #video-full visible + 0.12s opacity crossfade + vignette fade-in
+                            (fullhim entries later in the timeline: add immediateRender:false
+                             to their fromTo if the element must be visible earlier — gotcha #1)
+             →full takeover: tl.to("#video-wrap", { y: 900, duration: 0.42, ease: "power2.in" }, Q(t)); */
+
+          /* ── retention devices ── */
+          tl.fromTo("#progress", { scaleX: 0 }, { scaleX: 1, duration: DUR - 0.13, ease: "none" }, 0.05);
+          /* zoom-punch per key word:
+             tl.to("#bg-video", { scale: 1.07, duration: 0.15, ease: "power2.out" }, Q(w));
+             tl.to("#bg-video", { scale: 1.0,  duration: 0.35, ease: "power2.inOut" }, Q(w + 0.18)); */
+
+          /* ── «FILL» card lifecycles: enter(host, start) … beats … exit(host, end−0.2) ── */
+
+          /* ── karaoke captions (generated) ── */
+{{CAPTION_TWEENS}}
+
+          window.__timelines = window.__timelines || {};
+          window.__timelines["branded-ad"] = tl;
+        })();
+      </script>
+    </div>
+  </body>
+</html>

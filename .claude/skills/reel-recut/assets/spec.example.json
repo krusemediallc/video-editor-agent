@@ -1,0 +1,48 @@
+{
+  "_comment": "Complete example spec. Paths are relative to this file unless absolute. Copy it, point source/output at your clip, rewrite banner + captions against YOUR transcript, run: python3 ../scripts/build_reel.py spec.json",
+  "_style_note": "EXAMPLE BRAND ONLY — this purple-box + Montserrat look is one creator's brand, reverse-engineered from their reels. Replace accent_color / font_url / weights with your own brand (or delete the whole style block to accept these as defaults). font_url should be a variable TTF so the named weights work.",
+  "source": "raw/my-talking-head.mp4",
+  "output": "out/reel-recut.mp4",
+  "work_dir": "out/_skill_work",
+  "style": {
+    "accent_color": "#8030F8",
+    "text_color": "#FFFFFF",
+    "stroke_color": "#000000",
+    "font_url": "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf",
+    "banner_weight": "Black",
+    "caption_weight": "ExtraBold",
+    "banner_size": 76,
+    "caption_size": 64,
+    "callout_size": 66,
+    "caption_stroke": 11,
+    "caption_cy": 1560
+  },
+  "banner": ["AUTOMATE YOUR ENTIRE", "EDITING WORKFLOW"],
+  "silence_cut": { "enabled": true, "noise_db": -30, "min_pause": 0.13, "edge": 0.035 },
+  "manual_cuts": [[23.8, 25.5]],
+  "words": "transcript-words.json",
+  "callouts": [
+    { "start": 40.2, "end": 43.0, "text": "comment \"workflow\"", "cy": 660, "suppress_captions": [17] }
+  ],
+  "captions": [
+    {"start":0.0,"end":1.6,"text":"Did you know you can"},
+    {"start":1.6,"end":3.2,"text":"edit an entire reel"},
+    {"start":3.2,"end":4.8,"text":"without opening an editor"},
+    {"start":4.8,"end":6.4,"text":"I filmed this in one take"},
+    {"start":6.4,"end":8.0,"text":"stumbles, pauses, everything"},
+    {"start":8.0,"end":10.0,"text":"then described the edit"},
+    {"start":10.0,"end":12.2,"text":"in a single JSON file"},
+    {"start":12.2,"end":14.4,"text":"the banner, these captions"},
+    {"start":14.4,"end":16.6,"text":"even this box right here"},
+    {"start":16.6,"end":19.0,"text":"all rendered in one pass"},
+    {"start":19.0,"end":21.4,"text":"the dead air gets cut"},
+    {"start":21.4,"end":23.8,"text":"so it feels fast"},
+    {"start":25.5,"end":28.0,"text":"and every caption stays"},
+    {"start":28.0,"end":30.4,"text":"synced to the tightened audio"},
+    {"start":30.4,"end":33.0,"text":"change one line, re-render"},
+    {"start":33.0,"end":35.6,"text":"it takes about a minute"},
+    {"start":35.6,"end":38.4,"text":"I'll show you the whole setup"},
+    {"start":38.4,"end":41.0,"text":"so comment \"workflow\""},
+    {"start":41.0,"end":43.6,"text":"and I'll send it over"}
+  ]
+}

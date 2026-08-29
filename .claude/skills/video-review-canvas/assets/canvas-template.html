@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{{TITLE}} — {{VERSION_LABEL}} review</title>
+<style>
+  /* Accent tokens — retint these to the project's brand. Everything else can stay. */
+  :root{
+    --a1:{{ACCENT_1}};      /* primary accent  */
+    --a2:{{ACCENT_2}};      /* gradient mid    */
+    --a3:{{ACCENT_3}};      /* gradient end    */
+    --amber:#ffc738; --green:#2ecc71; --red:#f0284a;
+    --bg:#07080c; --panel:#12141a; --panel2:#1b1e26; --line:#262b36;
+    --text:#f3f5f9; --muted:#8a93a3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+       -webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(900px 620px at 20% -5%,{{GLOW_1}},transparent 60%),
+               radial-gradient(760px 560px at 92% 18%,{{GLOW_2}},transparent 62%)}
+  .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:26px 18px 90px}
+
+  header{margin-bottom:20px}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:800;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  h1{font-size:26px;margin:0 0 6px;font-weight:800;letter-spacing:-.01em}
+  h1 em{font-style:normal;background:linear-gradient(92deg,var(--a1),var(--a2) 55%,var(--a3));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  header p{color:var(--muted);font-size:14px;line-height:1.55;margin:0;max-width:760px}
+  header p b{color:var(--text)}
+  .facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .fact{background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:6px 13px;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .fact b{color:var(--text)}
+
+  .layout{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-top:22px}
+  .player{flex:0 0 auto;width:{{PLAYER_WIDTH}}}
+  @media (max-width:820px){.player{width:100%}}
+  video{width:100%;border-radius:16px;display:block;background:#000;
+    box-shadow:0 26px 74px rgba(0,0,0,.62)}
+
+  .timeline{position:relative;height:58px;margin-top:16px;cursor:pointer}
+  .track{position:absolute;left:0;right:0;top:26px;height:8px;border-radius:5px;background:var(--panel2)}
+  .beatmarks{position:absolute;left:0;right:0;top:26px;height:8px;pointer-events:none}
+  .beatmarks i{position:absolute;top:0;width:2px;height:8px;background:rgba(138,147,163,.42)}
+  .played{position:absolute;left:0;top:26px;height:8px;border-radius:5px 0 0 5px;width:0;
+    background:linear-gradient(90deg,var(--a1),var(--a2) 55%,var(--a3));pointer-events:none}
+  .playhead{position:absolute;top:18px;width:3px;height:24px;background:#fff;border-radius:2px;
+    margin-left:-1px;pointer-events:none;box-shadow:0 0 10px rgba(255,255,255,.55)}
+  .pin{position:absolute;top:0;width:22px;height:22px;margin-left:-11px;border-radius:50% 50% 50% 4px;
+    background:var(--a1);color:#fff;font-size:11.5px;font-weight:800;display:flex;
+    align-items:center;justify-content:center;border:2px solid var(--bg);cursor:pointer;z-index:3}
+  .pin:hover{background:var(--amber);color:#241a00}
+  .tl-time{position:absolute;right:0;top:40px;font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+  .tl-label{position:absolute;left:0;top:40px;color:var(--muted);font-size:12px;font-weight:700}
+
+  .controls{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
+  button{font:inherit;border:0;border-radius:10px;cursor:pointer}
+  .btn{background:var(--panel2);color:var(--text);padding:9px 14px;font-size:13.5px;font-weight:700}
+  .btn:hover{background:#252a35}
+  .btn-accent{background:linear-gradient(92deg,var(--a1),var(--a2));color:#fff;font-weight:800;padding:9px 16px}
+  .btn-accent:hover{filter:brightness(1.1)}
+  .btn-sm{padding:8px 10px;font-size:13px}
+  .keyhint{color:var(--muted);font-size:11.5px;margin-top:9px;line-height:2}
+  .keyhint kbd{background:var(--panel2);border:1px solid var(--line);border-radius:5px;
+    padding:1px 6px;font-size:11px;font-family:ui-monospace,Menlo,monospace}
+
+  .composer{margin-top:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:14px;display:none}
+  .composer.open{display:block}
+  .stamp{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);
+    color:var(--a1);font-weight:800;font-size:12.5px;padding:4px 10px;border-radius:999px;
+    margin-bottom:10px;font-variant-numeric:tabular-nums}
+  textarea{width:100%;min-height:76px;background:var(--panel2);color:var(--text);
+    border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;
+    font-size:14.5px;resize:vertical}
+  textarea:focus{outline:2px solid var(--a1);border-color:transparent}
+  .composer .row{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}
+
+  .side{flex:1 1 380px;min-width:330px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .card h2{font-size:14.5px;margin:0 0 4px;display:flex;justify-content:space-between;align-items:center}
+  .card h2 .cnt{color:var(--muted);font-weight:600;font-size:12.5px}
+  .card .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px;line-height:1.5}
+
+  .comment{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .comment:first-of-type{border-top:0}
+  .tchip{flex:0 0 auto;background:var(--panel2);color:var(--a1);font-weight:800;font-size:12.5px;
+    font-variant-numeric:tabular-nums;border-radius:8px;padding:5px 9px;height:fit-content;cursor:pointer}
+  .tchip:hover{background:var(--a1);color:#fff}
+  .ctext{font-size:14.5px;line-height:1.5;white-space:pre-wrap}
+  .cmeta{color:var(--muted);font-size:11.5px;margin-top:4px}
+  .empty{color:var(--muted);font-size:13.5px;padding:14px 0;text-align:center}
+  .err{color:#ff8a9c;font-size:13px;margin-top:8px;display:none}
+
+  .beats{display:flex;flex-direction:column;gap:7px}
+  .beat{display:flex;gap:11px;align-items:flex-start;background:var(--panel2);
+    border:1px solid transparent;border-left:3px solid var(--a1);border-radius:9px;
+    padding:9px 12px;cursor:pointer;text-align:left}
+  .beat:hover{border-color:var(--line);border-left-color:var(--amber);background:#232833}
+  .beat.on{border-color:var(--a1);background:#1c2534}
+  .beat .bt{flex:0 0 46px;font-variant-numeric:tabular-nums;font-weight:800;font-size:12.5px;color:var(--a1)}
+  .beat .bd{flex:1;min-width:0;display:flex;flex-direction:column}
+  .beat .bd .bn{display:block;font-weight:800;font-size:13.5px;line-height:1.3}
+  .beat .bd .bs{display:block;color:var(--muted);font-size:12px;margin-top:3px;line-height:1.45}
+  .beat[data-tone="red"]{border-left-color:var(--red)}   .beat[data-tone="red"] .bt{color:#ff8a9c}
+  .beat[data-tone="green"]{border-left-color:var(--green)} .beat[data-tone="green"] .bt{color:#7fe6ac}
+  .beat[data-tone="amber"]{border-left-color:var(--amber)} .beat[data-tone="amber"] .bt{color:#ffd873}
+  .beat[data-tone="mute"]{border-left-color:#6b7383}      .beat[data-tone="mute"] .bt{color:var(--muted)}
+  .notes{display:flex;flex-direction:column;gap:9px}
+  .note{background:var(--panel2);border:1px solid transparent;border-left:3px solid var(--a1);
+    border-radius:10px;padding:10px 12px}
+  .note .nn{display:block;font-weight:800;font-size:13.5px;line-height:1.3}
+  .note .nb{display:block;color:var(--muted);font-size:12.2px;margin-top:4px;line-height:1.5}
+  .note .nb b{color:var(--text);font-weight:700}
+  .note[data-tone="red"]{border-left-color:var(--red)}
+  .note[data-tone="green"]{border-left-color:var(--green)}
+  .note[data-tone="amber"]{border-left-color:var(--amber)}
+  .note[data-tone="mute"]{border-left-color:#6b7383}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">{{EYEBROW}}</div>
+    <h1>{{TITLE}} — <em>{{VERSION_LABEL}}</em></h1>
+    <p>{{BLURB}} Pause anywhere and hit <b>Comment at this frame</b> (or press <kbd>C</kbd>) —
+      every note pins to that exact timestamp and I pick them all up for the next cut.
+      Use <kbd>←</kbd> <kbd>→</kbd> to step one frame.</p>
+    <div class="facts">{{FACTS}}</div>
+  </header>
+
+  <div class="layout">
+    <div class="player">
+      <video id="vid" src="{{VIDEO_FILE}}" playsinline preload="metadata"></video>
+      <div class="timeline" id="tl">
+        <div class="track"></div>
+        <div class="beatmarks" id="beatmarks"></div>
+        <div class="played" id="played"></div>
+        <div class="playhead" id="playhead" style="left:0"></div>
+        <div class="tl-label" id="tllabel"></div>
+        <div class="tl-time" id="tltime">0:00.0 · f0</div>
+      </div>
+      <div class="controls">
+        <button class="btn btn-sm" id="backbtn" title="one frame back">◀|</button>
+        <button class="btn" id="playbtn">▶ Play</button>
+        <button class="btn btn-sm" id="fwdbtn" title="one frame forward">|▶</button>
+        <button class="btn btn-accent" id="commentbtn">💬 Comment at this frame</button>
+      </div>
+      <div class="keyhint">
+        <kbd>space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> ±1 frame ·
+        <kbd>shift</kbd>+<kbd>←</kbd><kbd>→</kbd> ±1s · <kbd>C</kbd> comment
+      </div>
+      <div class="composer" id="composer">
+        <div class="stamp">📍 <span id="stamp-t">0:00.0</span></div>
+        <textarea id="ctext" placeholder="What should change here?"></textarea>
+        <div class="row">
+          <button class="btn" id="cancelbtn">Cancel</button>
+          <button class="btn btn-accent" id="sendbtn">Post note</button>
+        </div>
+        <div class="err" id="cerr"></div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h2>Your notes <span class="cnt" id="ccount"></span></h2>
+        <p class="hint">Click a timestamp to jump the player there. Notes save to this page — I read them back before the next cut.</p>
+        <div id="clist"><div class="empty">No notes yet.</div></div>
+      </div>
+      {{NOTES_CARD}}
+      <div class="card">
+        <h2>Beat map</h2>
+        <p class="hint">Click any beat to jump to it.</p>
+        <div class="beats" id="beats"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var FPS = {{FPS}}, VERSION = "{{VERSION}}", DUR_FALLBACK = {{DURATION}};
+  var BEATS = {{BEATS_JSON}};
+
+  var $ = function (id) { return document.getElementById(id); };
+  var vid = $("vid"), tl = $("tl"), played = $("played"), playhead = $("playhead");
+  var tltime = $("tltime"), tllabel = $("tllabel"), playbtn = $("playbtn");
+  var composer = $("composer"), stampT = $("stamp-t"), ctext = $("ctext"), cerr = $("cerr");
+  var clist = $("clist"), ccount = $("ccount"), beatsEl = $("beats"), beatmarks = $("beatmarks");
+  var comments = [], stampedAt = 0;
+
+  function dur() { return vid.duration && isFinite(vid.duration) ? vid.duration : DUR_FALLBACK; }
+  function fmt(t, tenths) {
+    var m = Math.floor(t / 60), s = t - m * 60;
+    return m + ":" + (s < 10 ? "0" : "") + (tenths ? s.toFixed(1) : Math.floor(s));
+  }
+
+  BEATS.forEach(function (b) {
+    var el = document.createElement("button");
+    el.className = "beat";
+    el.setAttribute("data-tone", b.tone || "");
+    el.innerHTML = '<span class="bt"></span><span class="bd"><span class="bn"></span><span class="bs"></span></span>';
+    el.querySelector(".bt").textContent = fmt(b.t, true);
+    el.querySelector(".bn").textContent = b.n;
+    el.querySelector(".bs").textContent = b.s || "";
+    el.addEventListener("click", function () { vid.currentTime = b.t + 0.05; vid.pause(); });
+    beatsEl.appendChild(el);
+    var mk = document.createElement("i");
+    mk.style.left = (b.t / DUR_FALLBACK * 100).toFixed(2) + "%";
+    beatmarks.appendChild(mk);
+  });
+
+  function currentBeat(t) {
+    var cur = BEATS[0];
+    for (var i = 0; i < BEATS.length; i++) if (t >= BEATS[i].t) cur = BEATS[i];
+    return cur;
+  }
+
+  function tick() {
+    var d = dur(), p = d ? vid.currentTime / d : 0;
+    played.style.width = (p * 100).toFixed(2) + "%";
+    playhead.style.left = (p * 100).toFixed(2) + "%";
+    tltime.textContent = fmt(vid.currentTime, true) + " · f" + Math.round(vid.currentTime * FPS) + " / " + fmt(d, false);
+    if (BEATS.length) {
+      var b = currentBeat(vid.currentTime);
+      tllabel.textContent = b.n;
+      var els = beatsEl.querySelectorAll(".beat");
+      for (var i = 0; i < els.length; i++) els[i].classList.toggle("on", BEATS[i] === b);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  vid.addEventListener("play", function () { playbtn.textContent = "⏸ Pause"; });
+  vid.addEventListener("pause", function () { playbtn.textContent = "▶ Play"; });
+  playbtn.addEventListener("click", function () { vid.paused ? vid.play() : vid.pause(); });
+  vid.addEventListener("click", function () { vid.paused ? vid.play() : vid.pause(); });
+
+  function step(frames) {
+    vid.pause();
+    vid.currentTime = Math.max(0, Math.min(dur() - 1 / FPS, vid.currentTime + frames / FPS));
+  }
+  $("backbtn").addEventListener("click", function () { step(-1); });
+  $("fwdbtn").addEventListener("click", function () { step(1); });
+
+  tl.addEventListener("click", function (e) {
+    if (e.target.classList.contains("pin")) return;
+    var r = tl.getBoundingClientRect();
+    vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * dur();
+  });
+
+  function openComposer() {
+    vid.pause();
+    stampedAt = Math.round(vid.currentTime * 10) / 10;
+    stampT.textContent = fmt(stampedAt, true) + " · f" + Math.round(stampedAt * FPS);
+    composer.classList.add("open");
+    cerr.style.display = "none";
+    ctext.focus();
+  }
+  $("commentbtn").addEventListener("click", openComposer);
+  document.addEventListener("keydown", function (e) {
+    if (e.target === ctext) return;
+    if (e.key === "c" || e.key === "C") { e.preventDefault(); openComposer(); }
+    if (e.key === " ") { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); step(e.shiftKey ? -FPS : -1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); step(e.shiftKey ? FPS : 1); }
+  });
+  $("cancelbtn").addEventListener("click", function () {
+    composer.classList.remove("open"); ctext.value = "";
+  });
+
+  $("sendbtn").addEventListener("click", function () {
+    var text = ctext.value.trim();
+    if (!text) { ctext.focus(); return; }
+    var btn = this;
+    btn.disabled = true; btn.textContent = "Posting…";
+    fetch("./.herenow/data/comments", {
+      method: "POST",
+      headers: { "content-type": "application/json",
+                 "Idempotency-Key": (crypto.randomUUID ? crypto.randomUUID() : String(Math.random())) },
+      body: JSON.stringify({ t: stampedAt, text: text, author: "{{AUTHOR}}", version: VERSION })
+    }).then(function (r) {
+      if (!r.ok) return r.json().then(function (j) { throw new Error(j.message || ("HTTP " + r.status)); });
+      return r.json();
+    }).then(function () {
+      ctext.value = ""; composer.classList.remove("open"); loadComments();
+    }).catch(function (e) {
+      cerr.textContent = "Couldn't post: " + e.message; cerr.style.display = "block";
+    }).finally(function () {
+      btn.disabled = false; btn.textContent = "Post note";
+    });
+  });
+
+  function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+  function renderComments() {
+    comments.sort(function (a, b) { return a.data.t - b.data.t; });
+    ccount.textContent = comments.length ? comments.length + (comments.length === 1 ? " note" : " notes") : "";
+    var pins = tl.querySelectorAll(".pin");
+    for (var i = 0; i < pins.length; i++) pins[i].remove();
+    comments.forEach(function (c, i) {
+      var pin = document.createElement("div");
+      pin.className = "pin";
+      pin.style.left = (c.data.t / dur() * 100).toFixed(2) + "%";
+      pin.textContent = i + 1;
+      pin.title = fmt(c.data.t, true) + " — " + c.data.text.slice(0, 90);
+      pin.addEventListener("click", function () { vid.currentTime = c.data.t; vid.pause(); });
+      tl.appendChild(pin);
+    });
+    if (!comments.length) { clist.innerHTML = '<div class="empty">No notes yet.</div>'; return; }
+    clist.innerHTML = comments.map(function (c, i) {
+      var when = new Date(c.createdAt);
+      return '<div class="comment">' +
+        '<div class="tchip" data-t="' + c.data.t + '">#' + (i + 1) + " · " + fmt(c.data.t, true) + "</div>" +
+        '<div><div class="ctext">' + esc(c.data.text) + "</div>" +
+        '<div class="cmeta">' + esc(c.data.author || "") + " · " + when.toLocaleString() + "</div></div></div>";
+    }).join("");
+    var chips = clist.querySelectorAll(".tchip");
+    for (var j = 0; j < chips.length; j++) {
+      chips[j].addEventListener("click", function () {
+        vid.currentTime = parseFloat(this.dataset.t); vid.pause();
+      });
+    }
+  }
+
+  function loadComments() {
+    fetch("./.herenow/data/comments?limit=200")
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        // Filter by version: records can't be deleted, so old rounds stay in the store forever.
+        comments = (j.records || []).filter(function (r) { return r.data.version === VERSION; });
+        renderComments();
+      })
+      .catch(function () {});
+  }
+  vid.addEventListener("loadedmetadata", renderComments);
+  loadComments();
+  setInterval(loadComments, 30000);
+})();
+</script>
+</body>
+</html>
