@@ -1,0 +1,196 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root{
+  --bg:#0c0d10; --panel:#14161b; --panel2:#1a1d23; --line:#262a33;
+  --ink:#eef1f6; --dim:#9aa3b2; --faint:#6b7382;
+  --a1:#ff6b35; --a2:#a855f7; --ok:#3ddc84; --warn:#ffc857;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 ui-sans-serif,-apple-system,"Inter",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--a1)}
+.wrap{max-width:1440px;margin:0 auto;padding:34px 22px 90px}
+header{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:26px}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--a1);font-weight:700}
+h1{margin:.35em 0 .18em;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.02em;line-height:1.12}
+.vtag{display:inline-block;margin-left:10px;vertical-align:middle;font-size:11px;font-weight:700;
+  letter-spacing:.1em;background:var(--a2);color:#fff;padding:4px 9px;border-radius:6px}
+.blurb{color:var(--dim);max-width:74ch;margin:.5em 0 0}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:7px 12px;font-size:12.5px;color:var(--dim)}
+.fact b{color:var(--ink);font-variant-numeric:tabular-nums}
+.howto{margin-top:18px;background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--a2);border-radius:10px;padding:13px 16px;font-size:13.5px;color:var(--dim)}
+.howto b{color:var(--ink)}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:24px 0 18px}
+.bar .sp{flex:1}
+button,.btn{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--ink);padding:8px 14px}
+button:hover{border-color:var(--faint)}
+button.pri{background:var(--a1);border-color:var(--a1);color:#160b04;font-weight:650}
+button.pri:disabled{opacity:.5;cursor:default}
+button.on{background:var(--a2);border-color:var(--a2);color:#fff}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;display:flex;flex-direction:column}
+.card.hasnotes{border-color:var(--a2)}
+.chead{display:flex;gap:10px;align-items:flex-start;padding:14px 15px 11px}
+.num{flex:none;width:30px;height:30px;border-radius:8px;background:var(--panel2);
+  border:1px solid var(--line);display:grid;place-items:center;
+  font-size:12.5px;font-weight:700;color:var(--a1);font-variant-numeric:tabular-nums}
+.ctitle{font-size:14.5px;font-weight:640;letter-spacing:-.01em;line-height:1.3}
+.csub{font-size:11.5px;color:var(--faint);margin-top:3px;font-variant-numeric:tabular-nums}
+video{display:block;width:100%;aspect-ratio:9/16;background:#000;object-fit:contain}
+.cut{margin:11px 15px 0;font-size:12px;line-height:1.5;color:var(--warn);
+  background:rgba(255,200,87,.07);border:1px solid rgba(255,200,87,.22);
+  border-radius:8px;padding:8px 10px}
+.cbody{padding:12px 15px 15px;display:flex;flex-direction:column;gap:9px;margin-top:auto}
+textarea{width:100%;min-height:64px;resize:vertical;font:inherit;font-size:13.5px;
+  background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+  border-radius:9px;padding:9px 11px}
+textarea:focus{outline:none;border-color:var(--a2)}
+.crow{display:flex;gap:8px;align-items:center}
+.stamp{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums;flex:1}
+.stamp b{color:var(--a2)}
+.notes{display:flex;flex-direction:column;gap:7px}
+.note{background:var(--panel2);border:1px solid var(--line);border-left:2px solid var(--a2);
+  border-radius:8px;padding:8px 10px;font-size:13px}
+.note .nt{font-size:11px;color:var(--a2);font-weight:700;font-variant-numeric:tabular-nums;
+  cursor:pointer;display:inline-block;margin-bottom:3px}
+.note .nm{font-size:10.5px;color:var(--faint);margin-top:4px}
+.err{color:#ff6b6b;font-size:12px}
+.empty{color:var(--faint);font-size:12.5px;font-style:italic}
+footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);
+  color:var(--faint);font-size:12.5px}
+@media(max-width:640px){.wrap{padding:22px 14px 70px}.grid{grid-template-columns:1fr}}
+</style>
+<div class="wrap">
+<header>
+  <div class="eyebrow">__EYEBROW__</div>
+  <h1>__H1__<span class="vtag">__VLABEL__</span></h1>
+  <p class="blurb">__BLURB__</p>
+  <div class="facts">__FACTS__</div>
+  <div class="howto">
+    <b>Leave a note on any hook.</b> Type in the box under that video and hit
+    <b>Post note</b> — it saves against that hook and stamps whatever frame the player is
+    paused on, so you can say “the cut at 0:04 is early” and I’ll know exactly where.
+    Scrub to the moment first, then write. Notes persist; I read them back before v2.
+  </div>
+</header>
+
+<div class="bar">
+  <button id="filt">Show only hooks with notes</button>
+  <div class="sp"></div>
+  <div class="stamp" id="total">Loading notes…</div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<footer>
+  Cut from <b>__SRC__</b> · every hook re-transcribed after rendering to confirm no word was
+  clipped at a join and no flub survived. Source file and cut plan live in
+  <code>Videos/hooks-composite-0901/</code>.
+</footer>
+</div>
+
+<script>
+var HOOKS = __HOOKS__;
+var VERSION = "__VERSION__";
+var AUTHOR  = "__AUTHOR__";
+var byHook = {}, onlyNotes = false;
+
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function fmt(t){var m=Math.floor(t/60),s=t-m*60;return m+":"+(s<10?"0":"")+s.toFixed(1);}
+
+function cardHTML(h){
+  return '<div class="card" id="card'+h.id+'">'
+    + '<div class="chead"><div class="num">'+h.id+'</div><div>'
+    +   '<div class="ctitle">'+esc(h.title)+'</div>'
+    +   '<div class="csub">'+h.dur+' · hook '+h.src+' &rarr; body cuts in at <b>'+h.seam+'</b></div>'
+    +   (h.fname ? '<div class="csub" style="opacity:.62;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;margin-top:3px;word-break:break-all">'+esc(h.fname)+'</div>' : '')
+    + '</div></div>'
+    + '<video id="v'+h.id+'" src="'+h.file+'" poster="'+h.poster+'" controls preload="none" playsinline></video>'
+    + (h.note ? '<div class="cut">✂ '+esc(h.note)+'</div>' : '')
+    + '<div class="cbody">'
+    +   '<div class="notes" id="n'+h.id+'"></div>'
+    +   '<textarea id="t'+h.id+'" placeholder="Note on variant '+h.id+'…"></textarea>'
+    +   '<div class="crow"><div class="stamp" id="s'+h.id+'">at <b>0:00.0</b></div>'
+    +   '<button class="pri" data-post="'+h.id+'">Post note</button></div>'
+    +   '<div class="err" id="e'+h.id+'" style="display:none"></div>'
+    + '</div></div>';
+}
+
+document.getElementById("grid").innerHTML = HOOKS.map(cardHTML).join("");
+
+HOOKS.forEach(function(h){
+  var v=document.getElementById("v"+h.id), s=document.getElementById("s"+h.id);
+  function upd(){ s.innerHTML = "at <b>"+fmt(v.currentTime||0)+"</b>"; }
+  v.addEventListener("timeupdate",upd); v.addEventListener("seeked",upd);
+});
+
+document.getElementById("grid").addEventListener("click",function(e){
+  var id=e.target.getAttribute&&e.target.getAttribute("data-post");
+  if(!id) return;
+  var btn=e.target, ta=document.getElementById("t"+id), v=document.getElementById("v"+id),
+      er=document.getElementById("e"+id), text=ta.value.trim();
+  if(!text){ta.focus();return;}
+  btn.disabled=true; btn.textContent="Posting…"; er.style.display="none";
+  fetch("./.herenow/data/comments",{method:"POST",
+    headers:{"content-type":"application/json",
+      "Idempotency-Key":(crypto.randomUUID?crypto.randomUUID():String(Math.random()))},
+    body:JSON.stringify({hook:Number(id),t:Math.round((v.currentTime||0)*10)/10,
+      text:text,author:AUTHOR,version:VERSION})
+  }).then(function(r){ if(!r.ok) return r.json().then(function(j){throw new Error(j.message||("HTTP "+r.status));}); return r.json(); })
+   .then(function(){ ta.value=""; load(); })
+   .catch(function(x){ er.textContent="Couldn't post: "+x.message; er.style.display="block"; })
+   .finally(function(){ btn.disabled=false; btn.textContent="Post note"; });
+});
+
+function render(){
+  var total=0;
+  HOOKS.forEach(function(h){
+    var list=(byHook[h.id]||[]).slice().sort(function(a,b){return a.data.t-b.data.t;});
+    total+=list.length;
+    var el=document.getElementById("n"+h.id), card=document.getElementById("card"+h.id);
+    card.classList.toggle("hasnotes", list.length>0);
+    card.style.display = (onlyNotes && !list.length) ? "none" : "";
+    el.innerHTML = list.length ? list.map(function(c){
+      return '<div class="note"><span class="nt" data-seek="'+h.id+'" data-t="'+c.data.t+'">◆ '
+        + fmt(c.data.t)+'</span><div>'+esc(c.data.text)+'</div>'
+        + '<div class="nm">'+esc(c.data.author||"")+' · '+new Date(c.createdAt).toLocaleString()+'</div></div>';
+    }).join("") : "";
+  });
+  document.getElementById("total").textContent =
+    total ? total+(total===1?" note":" notes")+" so far" : "No notes yet — the boxes below are live.";
+  var chips=document.querySelectorAll(".nt");
+  for(var i=0;i<chips.length;i++) chips[i].onclick=function(){
+    var v=document.getElementById("v"+this.dataset.seek);
+    v.currentTime=parseFloat(this.dataset.t); v.pause();
+    v.scrollIntoView({block:"center",behavior:"smooth"});
+  };
+}
+
+function load(){
+  fetch("./.herenow/data/comments?limit=500")
+    .then(function(r){return r.json();})
+    .then(function(j){
+      byHook={};
+      (j.records||[]).filter(function(r){return r.data.version===VERSION;})
+        .forEach(function(r){ (byHook[r.data.hook]=byHook[r.data.hook]||[]).push(r); });
+      render();
+    }).catch(function(){ render(); });
+}
+
+document.getElementById("filt").addEventListener("click",function(){
+  onlyNotes=!onlyNotes; this.classList.toggle("on",onlyNotes);
+  this.textContent = onlyNotes ? "Show all 21 hooks" : "Show only hooks with notes";
+  render();
+});
+
+load(); setInterval(load,30000);
+</script>

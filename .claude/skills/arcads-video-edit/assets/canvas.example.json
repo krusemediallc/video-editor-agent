@@ -1,0 +1,199 @@
+{
+  "video": "arcads-ad-v8.mp4",
+  "outDir": "review",
+  "title": "Arcads ad",
+  "version": "v8",
+  "eyebrow": "MR PAID SOCIAL · EDIT REVIEW",
+  "blurb": "V8 — your seven notes plus a louder opening bed. WITH · AI on ink pills, opaque caption pills, wearing / holding / interacting re-timed to your actual onsets, Pixar and Lego typeset on the rail, the finale cut down to three hard cuts and a fixed word column, and the clipped “over” restored by extending the base cut's last shot 0.1s. Same picture everywhere else.",
+  "author": "Reviewer",
+  "accents": [
+    "#ff6b35",
+    "#8b5cf6",
+    "#38bdf8"
+  ],
+  "facts": [
+    "1:33.5 · 1080×1920 · 30fps",
+    "7 notes applied · opening bed +11 dB",
+    "85 SFX · 0 whooshes",
+    "−14 LUFS · QA 4 layers"
+  ],
+  "notesHint": "Each of your V7 notes, and what changed.",
+  "notes": [
+    {
+      "n": "0:05.8 — WITH · AI now sits on ink pills",
+      "tone": "green",
+      "b": "Solid ink blocks with a cream ring behind each word, so it reads over the six playing cards."
+    },
+    {
+      "n": "0:35.4 — captions are solid now",
+      "tone": "green",
+      "b": "Every caption pill is fully opaque and fused into one block, inactive words at 90%. That fixes the thumbnails moment and every other busy background."
+    },
+    {
+      "n": "1:01.9 — wearing / holding / interacting are on your voice",
+      "tone": "green",
+      "b": "Whisper had “wearing” 0.3s early and “holding” 0.4s late. I measured the three onsets from the waveform and the words now slam on the syllable: 61.05, 61.80, 62.40."
+    },
+    {
+      "n": "1:14.5 / 1:15.6 — PIXAR and LEGO are on the rail",
+      "tone": "green",
+      "b": "Typeset in the same slot as the other styles, with their clicks. One line for Arcads' team: those are third-party marks in their ad's on-screen text; you asked for them, so they're in."
+    },
+    {
+      "n": "1:25.4 — the finale is cleaned up",
+      "tone": "green",
+      "b": "Was five transitions with blur in three seconds. Now: the wall builds with you in the centre, WITHOUT slams on the wall, one hard cut to the fanged mouth on “insane” (you move to the corner circle under the cut), hard cut back to the wall on “creative”, hard cut to the shatter on “budgets”. The four words build in a fixed column — nothing flies to a corner any more."
+    },
+    {
+      "n": "1:33.4 — “over” is whole",
+      "tone": "green",
+      "b": "That was the base cut itself: the last shot ended five frames before the R decayed. Extended the keep by 0.115s and rebuilt the base (now 1:33.5), so the word finishes and the end card holds a beat longer."
+    },
+    {
+      "n": "Music — opening section +11 dB",
+      "tone": "green",
+      "b": "The bed's first 28s are 11 dB hotter (limited, no clipping), easing back to the original build by 34s; the showcase drop is unchanged. A first pass at +6 dB barely registered in the mix. If you'd rather have a different track there than a louder one, say so and I'll generate one."
+    },
+    {
+      "n": "Still your call: the “AI ads” comment chip",
+      "tone": "amber",
+      "b": "Mirrors your locked line; only works if the comment automation runs on the account that runs the ad."
+    }
+  ],
+  "beats": [
+    {
+      "t": 0,
+      "n": "Cold land",
+      "s": "12% too close, settles.",
+      "tone": "mute"
+    },
+    {
+      "t": 1.12,
+      "n": "Hook plate (quoted)",
+      "s": "“The easiest method possible” → “out there right now”."
+    },
+    {
+      "t": 3.8,
+      "n": "N1 · You drop into a card; six ads fly in",
+      "s": "WITH · AI lands in the gutter.",
+      "tone": "green"
+    },
+    {
+      "t": 5.87,
+      "n": "N1 · Mosaic + slide to the split",
+      "s": "Blinds hide the base cut at 6.27.",
+      "tone": "green"
+    },
+    {
+      "t": 7.67,
+      "n": "N2 · arcads.ai bubble",
+      "s": "On the seam, tail into your cap."
+    },
+    {
+      "t": 11.96,
+      "n": "Seam chip",
+      "s": "The craziest thing."
+    },
+    {
+      "t": 13.1,
+      "n": "N3 · TAKEOVER: switchboard",
+      "s": "Eight models flip ON. 8/8 on “literally”.",
+      "tone": "green"
+    },
+    {
+      "t": 17.2,
+      "n": "Reference chip + preview thumb",
+      "s": "[Video1] already playing."
+    },
+    {
+      "t": 18.38,
+      "n": "N4 · TAKEOVER: reference video",
+      "s": "Rushes the lens, then flies back into the real popup.",
+      "tone": "green"
+    },
+    {
+      "t": 25.11,
+      "n": "[Image1] + YOUR PRODUCT",
+      "s": "Trade places on “swap it out”."
+    },
+    {
+      "t": 29.59,
+      "n": "Nodes on the seam",
+      "s": "ARCADS ── CLAUDE CODE."
+    },
+    {
+      "t": 31.17,
+      "n": "N5 · TAKEOVER: MCP field",
+      "s": "You in the circle; terminal, packets, real prompt.",
+      "tone": "green"
+    },
+    {
+      "t": 36.13,
+      "n": "Starting frames",
+      "s": "The real GPT Image 2 boards flip into their clips."
+    },
+    {
+      "t": 39.6,
+      "n": "Quote plate",
+      "s": "“These turned out so good”."
+    },
+    {
+      "t": 41.21,
+      "n": "N7 · Credits, top half",
+      "s": "Script / Video / Inside / Sound + music.",
+      "tone": "green"
+    },
+    {
+      "t": 49.05,
+      "n": "N8 · Checklist, top half",
+      "s": "Ticks, counter, EVERYTHING, flips to the quote.",
+      "tone": "green"
+    },
+    {
+      "t": 54.27,
+      "n": "N9 · Seam strip",
+      "s": "Between the video and your head, your words.",
+      "tone": "green"
+    },
+    {
+      "t": 60.75,
+      "n": "Wearing / holding / interacting",
+      "s": "Three slams over the example."
+    },
+    {
+      "t": 63.66,
+      "n": "Styles rail",
+      "s": "Number wheel 01…07 → ∞, every style named including Pixar and Lego.",
+      "tone": "mute"
+    },
+    {
+      "t": 79.03,
+      "n": "99% plate (quoted)",
+      "s": "No count-up.",
+      "tone": "mute"
+    },
+    {
+      "t": 82,
+      "n": "The frame draws in",
+      "s": "No text. Breath before the finale."
+    },
+    {
+      "t": 83.67,
+      "n": "N11 · TAKEOVER: generated b-roll",
+      "s": "Inside the frame. Hands back on “create”.",
+      "tone": "green"
+    },
+    {
+      "t": 86.41,
+      "n": "N12 · TAKEOVER: the wall",
+      "s": "You in the centre cell; three hard cuts; WITHOUT · INSANE · CREATIVE · BUDGETS in a fixed column.",
+      "tone": "green"
+    },
+    {
+      "t": 89.42,
+      "n": "N13 · End card on the seam",
+      "s": "Bordered box, docked seam, “AI ads” chip.",
+      "tone": "amber"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "collections": {
+    "comments": {
+      "fields": {
+        "hook":    { "type": "number", "required": true, "minimum": 0, "maximum": 99 },
+        "t":       { "type": "number", "required": true, "minimum": 0, "maximum": 7200 },
+        "text":    { "type": "string", "required": true, "maxLength": 2000, "trim": true },
+        "author":  { "type": "string", "maxLength": 60, "trim": true, "default": "Reviewer" },
+        "version": { "type": "string", "maxLength": 20, "default": "v1" }
+      },
+      "access": { "read": "public", "insert": "public", "update": "owner", "delete": "owner" },
+      "rateLimit": "500/hour/ip"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+exec bash "$(git rev-parse --show-toplevel)/scripts/scrub-check.sh" --staged

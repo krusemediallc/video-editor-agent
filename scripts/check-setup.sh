@@ -18,6 +18,8 @@ npx --yes hyperframes --version >/dev/null 2>&1 \
 if [ -f .env ] && grep -q "^ELEVENLABS_API_KEY=.\+" .env; then ok "ELEVENLABS_API_KEY in .env"
 else bad "ELEVENLABS_API_KEY in .env (SETUP.md #4)"; fi
 command -v python3 >/dev/null && ok "python3 $(python3 --version 2>&1 | cut -d' ' -f2)" || bad "python3 (SETUP.md #6)"
+[ -d tools/video-qa/node_modules ] && ok "video-qa engine installed" || bad "video-qa engine: npm --prefix tools/video-qa install (SETUP.md #6b)"
+[ -f MASTER_CONTEXT.md ] && ok "MASTER_CONTEXT.md present" || bad "MASTER_CONTEXT.md — copy the template and fill in the projects directory (SETUP.md #0)"
 
 echo "== optional =="
 python3 -c "import PIL" 2>/dev/null && ok "PIL" || opt "PIL — vignette/overlay PNGs"
@@ -28,7 +30,11 @@ if [ -f .env ] && grep -q "^GEMINI_API_KEY=.\+" .env; then ok "GEMINI_API_KEY in
 else opt "GEMINI_API_KEY — video-qa L3 (SETUP.md #8)"; fi
 "$HOME/.venvs/capcut/bin/python" -c "import pyJianYingDraft" 2>/dev/null \
   && ok "pyJianYingDraft venv" || opt "pyJianYingDraft — capcut-export (SETUP.md #11)"
-command -v whisper-cli >/dev/null && ok "whisper-cli" || opt "whisper-cli — faster QA seam probes"
+command -v whisper-cli >/dev/null && ok "whisper-cli" || opt "whisper-cli — VAD cut planners + faster QA seam probes"
+if [ -f .env ] && grep -q "^OPENAI_API_KEY=.\+" .env; then ok "OPENAI_API_KEY in .env"
+else opt "OPENAI_API_KEY — cloud whisper fallback (SETUP.md #10c)"; fi
+command -v swiftc >/dev/null && ok "swiftc" || opt "swiftc — hook-variations AVFoundation probe (SETUP.md #12)"
+[ "$(git config core.hooksPath 2>/dev/null)" = ".githooks" ] && ok "scrub hook enabled" || opt "scrub hook — git config core.hooksPath .githooks (SETUP.md #13)"
 node -e "require.resolve('puppeteer')" 2>/dev/null && ok "puppeteer" || opt "puppeteer — broll-capture screenshots (SETUP.md #9)"
 [ -d "/Applications/Screen Studio.app" ] && ok "Screen Studio" || opt "Screen Studio — Lane C B-roll (SETUP.md #9)"
 printf "  NOTE  OpenArt MCP (openart-broll) — verify in-session: openart_account_get (SETUP.md #10)\n"

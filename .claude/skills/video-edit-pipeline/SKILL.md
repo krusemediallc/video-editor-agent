@@ -8,7 +8,9 @@ description: >
   clip into a finished reel", "do the full edit", "make this look like their
   winning ads", or a revision request on a previously delivered edit. It routes
   every stage to the right specialist skill (reel-style-clone, branded-ad-edit,
-  sound-design, video-qa, video-review-canvas, edl-tighten, capcut-export) and
+  reel-recut, arcads-video-edit, hook-splitter, sound-design, ai-audio-sound-design,
+  video-qa, video-review-canvas, edl-tighten, hook-variations, naming-convention,
+  capcut-export) and
   owns the intake → style → edit → QA → deliver → revise loop end to end. Do
   NOT use for plain captions on untouched footage or single generated clips.
 ---
@@ -46,9 +48,10 @@ explicitly says so (e.g. "no sound design", "just render, no review page").
 
 Collect before anything else:
 
-1. **Footage** — path(s) to the raw talking-head file(s). Expect them in
-   `footage/`. Run `ffprobe` on every file immediately: resolution, fps,
-   duration, audio channels. Do not assume; probe.
+1. **Footage** — path(s) to the raw file(s). Expect them in the **projects
+   directory** named in `MASTER_CONTEXT.md` (or `footage/` in a standalone setup) —
+   never move media into this pack. Run `ffprobe` on every file immediately:
+   resolution, fps, duration, audio channels. Do not assume; probe.
 2. **Optional reference reel** — a file or URL of an edit whose style should
    be cloned. If present, Stage 1 is mandatory.
 3. **Brand / site** — brand name, website URL, logo, palette if known. Check
@@ -58,8 +61,23 @@ Collect before anything else:
    otherwise. Confirm ratio before storyboarding; a ratio change late in the
    build invalidates every crop and card position.
 
-Create a working directory per project (e.g. `outputs/<project-slug>/`) and
-keep every intermediate there.
+Create a working directory per project under the projects directory
+(`<projects dir>/<project-slug>/`; default `outputs/<project-slug>/` here) and keep
+every intermediate there: source copy, transcripts, spec/EDL, comp, `output-vN.mp4`
+masters, `review/`, `_qa/`.
+
+5. **Which lane.** Decide from what was handed over, before Stage 1:
+   - a **single talking head + a brand** → Stages 1–7 below (branded-ad-edit).
+   - the creator's **own signature reel look** (banner, karaoke captions, callouts,
+     silence-cut pacing) → **reel-recut**, then Stages 4–6.
+   - **multi-take screen + camera + mic recordings** (a product demo read line by line)
+     → **arcads-video-edit** (EDL base cut the reviewer locks, then its graphics pass).
+   - **one long recording of many hooks/takes** → **hook-splitter**; an approved body
+     that needs many openers → **hook-variations** (Stage 6b).
+   - **AI-actor / generated footage that sounds sterile** → **ai-audio-sound-design**
+     (audio-only; the picture is untouched).
+   Check `MASTER_CONTEXT.md` § Hard rules first: it says which regime the reviewer
+   holds you to (face rule, full-screen takeovers, approved-copy cuts).
 
 ## Stage 1 — Style clone (only if a reference exists)
 
@@ -123,10 +141,14 @@ This is a loop, not a checklist. Order matters:
    (`GEMINI_API_KEY`) if configured.
 4. **Fix → re-check → re-snapshot** until the frames are clean.
 5. **Render** the MP4.
-6. **Verify the rendered MP4 with video-qa** (its 4-layer procedure). The
-   composition preview passing is NOT evidence the render is right — fonts,
-   media, and audio can differ in the rendered file. Probe duration, spot-check
-   frames extracted from the MP4 itself, and check audio levels in dB on the
+6. **Verify the rendered MP4 with video-qa** — run the engine:
+   `npm --prefix tools/video-qa run qa:video -- --lane hyperframes --video <out.mp4>
+   --edl <edl.json> --words <words-master.json> --words-are-output` (reel-recut lane:
+   `--manifest <spec>.qa-manifest.json --words <source words>`). Read the report, open
+   the inspection packets for anything HIGH, fix within the whitelist, re-render,
+   re-run; max 3 rounds. The composition preview passing is NOT evidence the render is
+   right — fonts, media, and audio can differ in the rendered file. Probe duration,
+   spot-check frames extracted from the MP4 itself, and check audio levels in dB on the
    rendered file.
 
 Nothing ships that hasn't been verified as rendered pixels and measured audio.
@@ -164,6 +186,21 @@ When the reviewer leaves notes (or the user relays them):
 Repeat until sign-off. Production edits have taken 4+ rounds; that is normal,
 not failure.
 
+## Stage 6b — Variant batches (only when one cut spawns many)
+
+If the approved cut is a **body** that now needs a set of alternate openers — "add all
+these hooks to it", a hook A/B test, opener variants — hand off to **hook-variations**.
+It joins losslessly (the approved body stays bit-identical), matches each hook's loudness
+to the body, and verifies with AVFoundation rather than ffmpeg, because an ffmpeg-only
+check cannot see the parameter-set mismatch that makes such a join play fine in ffmpeg and
+freeze in QuickTime.
+
+Any time a stage produces **more than two files a human has to choose between**, run
+**naming-convention** before delivering. A folder of `render-final-v3.mp4` forces the
+reviewer to open everything; the filename should carry the axes that vary. That skill also
+covers verifying a subject label before baking it into 40 filenames — inherited labels from
+an upstream cut list are evidence, not truth.
+
 ## Stage 7 — Optional CapCut handoff
 
 If a human editor wants a final manual pass, invoke **capcut-export** to
@@ -183,7 +220,12 @@ draft opens before telling the user it is ready.
 | 4-layer QA on comps and rendered MP4s | video-qa |
 | Publish for review, read notes back | video-review-canvas |
 | Silence/pacing cuts with timeline remap | edl-tighten |
-| Spec-driven short-form recut style | reel-recut |
+| One body + many hooks → one video per hook (hook A/B batch) | hook-variations |
+| Naming a batch of deliverables so the files say what they are | naming-convention |
+| Spec-driven short-form recut style (the creator's own look, or a graphics-free raw cut) | reel-recut |
+| Multi-take screen + camera + mic demo → EDL base cut → motion-graphics pass | arcads-video-edit |
+| One long recording of many hooks → one tightened video per hook (+ gallery canvas) | hook-splitter |
+| AI-actor footage: ambience, room reverb, bleeps, watermark whine, loudness master | ai-audio-sound-design |
 | Layered export to a CapCut draft | capcut-export |
 
 ## Culture rules (apply at every stage)

@@ -21,3 +21,17 @@ node_modules/
 
 __pycache__/
 *.pyc
+
+# compiled per-machine (build with: swiftc -O avtest.swift -o avtest)
+.claude/skills/hook-variations/scripts/avtest
+
+# The personal layer: brand tokens, defaults, reviewer prefs, learnings, and any
+# machine-specific paths. Filled from MASTER_CONTEXT.template.md; never committed.
+MASTER_CONTEXT.md
+
+# video-qa engine scratch (layer cache + generated test fixtures)
+tools/video-qa/.qa-cache/
+tools/video-qa/src/__tests__/fixtures/gen/
+
+# local deny-list for scripts/scrub-check.sh (names of clients, people, private repos)
+scripts/scrub-denylist.local.txt

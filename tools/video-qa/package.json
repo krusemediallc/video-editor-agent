@@ -1,0 +1,25 @@
+{
+  "name": "video-qa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "4-layer QA engine for rendered video edits: ffmpeg technical checks, transcript seam checks through the EDL, an optional Gemini watch+listen pass, and inspection packets.",
+  "scripts": {
+    "qa:video": "tsx cli/qa-video.ts",
+    "qa:inspect": "tsx cli/inspect-video.ts",
+    "test": "tsx --test src/__tests__/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

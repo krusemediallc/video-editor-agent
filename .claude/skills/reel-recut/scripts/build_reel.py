@@ -38,8 +38,12 @@ See ../assets/spec.example.json for a complete example.
 import json, os, sys, subprocess, re, shutil, urllib.request
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-FFMPEG = os.environ.get("FFMPEG") or shutil.which("ffmpeg") or "ffmpeg"
-FFPROBE = os.environ.get("FFPROBE") or shutil.which("ffprobe") or "ffprobe"
+def _bin(env, name):
+    """env var, else PATH, else the Homebrew location (non-login shells often lack it), else the bare name."""
+    return (os.environ.get(env) or shutil.which(name)
+            or (f"/opt/homebrew/bin/{name}" if os.path.exists(f"/opt/homebrew/bin/{name}") else name))
+FFMPEG = _bin("FFMPEG", "ffmpeg")
+FFPROBE = _bin("FFPROBE", "ffprobe")
 W, H, FPS = 1080, 1920, 30
 
 # ---------------------------------------------------------------------------

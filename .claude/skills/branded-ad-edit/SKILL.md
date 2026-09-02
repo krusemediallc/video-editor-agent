@@ -21,7 +21,8 @@ Raw talking-head in → finished branded ad out. The speaker's footage and audio
 or, for multi-take raw, a best-take assembly cut FIRST, then the assembled master
 plays untouched); everything else — graphics, captions, sound, framing — is built
 around them, in the target brand's visual language. Proven on a real paid brand-deal
-delivery and a 4-round style-clone reel.
+delivery, a 4-round style-clone reel, and a product-news explainer built from a
+generated likeness.
 
 **Read the reference file for each phase when you reach it** — they carry the exact
 commands, contracts, and hard-won gotchas. Skim [references/gotchas.md](references/gotchas.md)
@@ -136,9 +137,36 @@ trap: [references/audio.md](references/audio.md).
 
 `npx hyperframes check` until 0 errors → one multi-timestamp `snapshot` call → LOOK
 at the contact sheet with vision and fix what you see → render with
-`PRODUCER_BROWSER_GPU_MODE=hardware` → then verify the MP4 itself: ffprobe duration
-(never trust the render log), re-view previously-broken beats, A/B `volumedetect`
-windows around SFX hits vs a no-SFX render, confirm the bed in word-gaps.
+`PRODUCER_BROWSER_GPU_MODE=hardware` → then run the automated 4-layer QA on the MP4
+itself with the bundled engine (`tools/video-qa`; procedure and manifest shapes in the
+`video-qa` skill):
+
+```bash
+npm --prefix tools/video-qa run qa:video -- --lane hyperframes --video <proj>/output.mp4 \
+    --edl <proj>/edl.json \                 # picture-lock cut list (EDL shape: video-qa skill)
+    --words <proj>/words-master.json --words-are-output \
+    [--placement <proj>/preview/manifest.json]   # SFX/card placements if present
+```
+
+It ffprobes the FILE (never trust the render log — gotcha #6), runs blackdetect /
+freezedetect (catches frozen un-synced b-roll) / scene-spike flash detection /
+silencedetect / LUFS / clipping, checks every EDL seam against the output-time word
+map (clipped words, duplicate phrases, butt-splice clicks — isolated seam re-probes
+only, NEVER a full re-whisper of the render), and has Gemini watch+listen to a proxy
+with audio intact. On the proving run it heard both documented seam flubs in the
+known-dirty cut and passed the repaired one. Read `_qa/<name>/qa-report.md`;
+HIGH/CRITICAL issues come with inspection packets (contact sheet + marked waveform +
+transcript + audio stats). Fix within the whitelist (`tools/video-qa/README.md`),
+re-render, re-run; max 3 rounds, then escalate to the user with the packet.
+
+Then **master the audio**: any level change (especially scaling the kit per gotcha
+#23) can push the mix over full scale while every individual hit still measures fine.
+Measure the render with `ebur128=peak=true` and land it at ≈ −14 LUFS / ≤ −1 dBTP — a
+limiter pass with `-c:v copy` fixes it in seconds without re-rendering (gotcha #30).
+Still manual: the SFX audit and confirming the bed in word-gaps. **Audit SFX with a
+SFX-only render**, not an A/B against a no-SFX render — if the VO is loudness-normalised
+it swamps every hit in a peak or RMS window and the diff reports hits missing that are
+actually present (gotcha #22).
 Checklist: [references/composition.md](references/composition.md) §6.
 
 ### 9. Hook variants (optional)
@@ -149,20 +177,18 @@ timeline, `mapTime()` everything (timeline positions, attrs, captions, SFX), exc
 fully-cut cards, pre-cut media per variant, hide splices inside framing changes.
 Full recipe + the immediateRender landmine: [references/variants.md](references/variants.md).
 
-### 10. Deliver — with a timestamped review loop
+### 10. Deliver on a review canvas
 
 New versions are NEW files — never overwrite an approved cut. Ship MP4s + the project
-dir so tweaks are regenerate-and-re-render. Send files to the user; log gotchas hit.
+dir so tweaks are regenerate-and-re-render.
 
-**For revision rounds, publish a frame.io-style review page** — it converts vague
-notes into surgical, timestamped fixes. Recipe (here.now): publish a page with the
-video + a custom scrubber; a `.herenow/data.json` manifest declares a `comments`
-collection (`insert: public`, origin-checked); the page POSTs `{t, text, version}` to
-the site-relative `./.herenow/data/comments` and pins each comment on the timeline;
-the agent reads them back with `GET https://here.now/api/v1/publishes/:slug/data/
-comments` + Bearer key (`~/.herenow/credentials`). here.now's agent docs are
-UA-gated — fetch https://here.now/docs with `User-Agent: claude`. Filter pins by a
-`version` field so each round starts with a clean slate.
+**The cut goes to the reviewer on a here.now review canvas, and the reply LEADS with
+that URL** — use the **`video-review-canvas`** skill, which builds the player +
+frame-accurate scrubber + click-the-timeline notes + a beat map from a config and reads
+the notes back next round. Write the beat map straight from `storyboard.json`; naming
+each card is what turns "something's off in the middle" into "at 0:14.3 the chip lands
+early". A file card without the link reads as "not delivered". Then log every gotcha
+you hit.
 
 **Client revision cuts** (removing VO after the composition is built) are EDL remaps,
 not hand-retimes — see [references/variants.md](references/variants.md) §Revision cuts.
@@ -180,6 +206,8 @@ not hand-retimes — see [references/variants.md](references/variants.md) §Revi
 | [assets/index-template-starter.html](assets/index-template-starter.html) | copy as your template's starting point |
 | [scripts/generate-captions.mjs](scripts/generate-captions.mjs) | caption generation (see its header for config) |
 | [scripts/generate-sfx.py](scripts/generate-sfx.py) | SFX kit generation + audit + normalize |
+| the `video-qa` skill + `tools/video-qa` | the automated 4-layer QA run in step 8 |
+| the `video-review-canvas` skill | delivering the cut and reading timeline notes back (step 10) |
 
 Requires: node ≥ 20 + `npx hyperframes` (skills: `talking-head-recut` brings fonts +
 gsap.min.js — run `npx hyperframes skills update talking-head-recut`), `ffmpeg`/

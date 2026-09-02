@@ -1,0 +1,674 @@
+{
+ "canvas": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 30
+ },
+ "cam": {
+  "full": {
+   "crop": [
+    608,
+    1080,
+    666,
+    0
+   ]
+  },
+  "half": {
+   "crop": [
+    1215,
+    1080,
+    363,
+    0
+   ]
+  },
+  "circle": {
+   "crop": [
+    1080,
+    1080,
+    430,
+    0
+   ],
+   "size": 380,
+   "x": 60,
+   "y": 1418
+  }
+ },
+ "screenRects": {
+  "homepage": [
+   2430,
+   2160,
+   1345,
+   182
+  ],
+  "modal": [
+   2400,
+   2133,
+   1500,
+   510
+  ],
+  "panel": [
+   1080,
+   1920,
+   3086,
+   520
+  ],
+  "gallery01": [
+   1600,
+   1422,
+   1840,
+   600
+  ],
+  "playerbox": [
+   2084,
+   1852,
+   1043,
+   528
+  ],
+  "vert": [
+   1084,
+   1927,
+   1542,
+   528
+  ],
+  "grid": [
+   1620,
+   2880,
+   2160,
+   0
+  ],
+  "grid_split": [
+   2002,
+   1780,
+   770,
+   300
+  ],
+  "gallery02": [
+   1360,
+   1209,
+   1960,
+   800
+  ],
+  "pb_t08": [
+   1080,
+   960,
+   1520,
+   908
+  ],
+  "pb_t10": [
+   1458,
+   1296,
+   1357,
+   880
+  ],
+  "pb_t12": [
+   1040,
+   924,
+   1528,
+   842
+  ],
+  "pb_t15": [
+   1128,
+   1002,
+   1520,
+   800
+  ],
+  "pb_t15b": [
+   1128,
+   1002,
+   1520,
+   540
+  ],
+  "gallery15": [
+   2002,
+   1780,
+   830,
+   420
+  ],
+  "zoom_hat": [
+   1128,
+   1003,
+   1520,
+   828
+  ],
+  "vert_t12": [
+   1040,
+   1849,
+   1528,
+   580
+  ],
+  "prompt_zoom": [
+   1296,
+   1152,
+   3040,
+   888
+  ]
+ },
+ "segments": [
+  {
+   "id": "01-hook",
+   "take": "02",
+   "in": 0.5,
+   "out": 7.92,
+   "layout": "cam",
+   "note": "I'm about to show you the easiest method possible",
+   "keep": [
+    [
+     0.995,
+     4.895
+    ],
+    [
+     5.195,
+     6.915
+    ],
+    [
+     7.275,
+     7.92
+    ]
+   ],
+   "gain": 0.64
+  },
+  {
+   "id": "02-signup",
+   "take": "05",
+   "in": 3.75,
+   "out": 9.35,
+   "layout": "split",
+   "rect": "homepage",
+   "note": "pop over to arcads.ai and log in or sign up",
+   "screenOffset": 2.475,
+   "keep": [
+    [
+     3.765,
+     9.085
+    ]
+   ],
+   "gain": 0.79
+  },
+  {
+   "id": "03-craziest",
+   "take": "06",
+   "in": 3.94,
+   "out": 9.54,
+   "layout": "split",
+   "rect": "modal",
+   "note": "reference ad as a VIDEO in your prompt (first stumbled attempt cut)",
+   "keep": [
+    [
+     3.94,
+     9.54
+    ]
+   ],
+   "screenOffset": 10.28,
+   "gain": 1.6
+  },
+  {
+   "id": "03b-prompt",
+   "take": "06",
+   "in": 9.54,
+   "out": 13,
+   "layout": "split",
+   "rect": "prompt_zoom",
+   "note": "punch in on the prompt panel - \"a reference ad as a video in your prompt\"",
+   "keep": [
+    [
+     9.54,
+     12.815
+    ]
+   ],
+   "screenOffset": 21.96,
+   "gain": 1.6,
+   "veto": [
+    [
+     11.935,
+     12.075
+    ]
+   ],
+   "joinPrev": true
+  },
+  {
+   "id": "04-likethis",
+   "take": "06",
+   "in": 16.45,
+   "out": 19.12,
+   "layout": "screen",
+   "rect": "panel",
+   "screenAudio": 1,
+   "duckUntil": 17.55,
+   "note": "Like this. + reference video playing in the prompt panel (hold trimmed 5.6s->3.8s)",
+   "protect": [
+    [
+     16.45,
+     19.12
+    ]
+   ],
+   "keep": [
+    [
+     16.45,
+     19.12
+    ]
+   ],
+   "gain": 1.39,
+   "screenOffset": 1.45
+  },
+  {
+   "id": "05-swapout",
+   "take": "06",
+   "in": 26.1,
+   "out": 28.8,
+   "layout": "split",
+   "rect": "modal",
+   "note": "reference image of your product",
+   "keep": [
+    [
+     26.1,
+     28.8
+    ]
+   ]
+  },
+  {
+   "id": "05z-swapout",
+   "take": "06",
+   "in": 28.8,
+   "out": 29.9,
+   "layout": "split",
+   "rect": "zoom_hat",
+   "note": "zoom into the product shot on screen (the creator's note at 0:27.7)",
+   "keep": [
+    [
+     28.8,
+     29.795
+    ]
+   ],
+   "gain": -2.03
+  },
+  {
+   "id": "05b-swapout",
+   "take": "06",
+   "in": 31.25,
+   "out": 33.23,
+   "layout": "split",
+   "rect": "modal",
+   "note": "and asking the model to swap it out (0.86s of room tone between them cut)",
+   "keep": [
+    [
+     31.325,
+     33.23
+    ]
+   ],
+   "gain": 0.95
+  },
+  {
+   "id": "06-claudecode",
+   "take": "07",
+   "in": 3.42,
+   "out": 8.05,
+   "layout": "split",
+   "rect": "modal",
+   "note": "connect ArcAds into Claude Code",
+   "keep": [
+    [
+     3.435,
+     7.995
+    ]
+   ],
+   "screenOffset": 8.37
+  },
+  {
+   "id": "07-prompts",
+   "take": "07",
+   "in": 9.8,
+   "out": 11.53,
+   "layout": "split",
+   "rect": "modal",
+   "note": "insanely detailed prompts ('insane' false start cut)",
+   "keep": [
+    [
+     9.8,
+     11.53
+    ]
+   ],
+   "screenOffset": 6.56,
+   "gain": 0.62
+  },
+  {
+   "id": "08-gptimage",
+   "take": "07",
+   "in": 14,
+   "out": 17.7,
+   "layout": "screen",
+   "rect": "panel",
+   "note": "generate the starting frames with GPT image 2",
+   "keep": [
+    [
+     14.095,
+     17.415
+    ]
+   ],
+   "screenOffset": 0.305,
+   "gain": 3.55
+  },
+  {
+   "id": "09-sogood",
+   "take": "01",
+   "in": 0.78,
+   "out": 2.92,
+   "layout": "cam",
+   "note": "These videos turned out so good",
+   "keep": [
+    [
+     1.015,
+     2.92
+    ]
+   ],
+   "camX": 610
+  },
+  {
+   "id": "10-wrotescript",
+   "take": "01",
+   "in": 4.94,
+   "out": 12.15,
+   "layout": "split",
+   "rect": "gallery15",
+   "note": "Claude Code wrote the script... (live gallery from take 15 - take 01's screen never moves)",
+   "keep": [
+    [
+     4.94,
+     9.855
+    ],
+    [
+     10.035,
+     12.095
+    ]
+   ],
+   "gain": -1.63,
+   "screenTake": "15",
+   "screenOffset": 7.66
+  },
+  {
+   "id": "11-everything",
+   "take": "01",
+   "in": 12.3,
+   "out": 17.05,
+   "layout": "split",
+   "rect": "gallery02",
+   "note": "all the background music, every shot, every frame",
+   "keep": [
+    [
+     12.415,
+     12.795
+    ],
+    [
+     13.355,
+     14.515
+    ],
+    [
+     14.715,
+     16.855
+    ]
+   ],
+   "gain": -1.76
+  },
+  {
+   "id": "11b-storyboard",
+   "take": "01",
+   "in": 17.85,
+   "out": 21.7,
+   "layout": "cam",
+   "note": "the concept, the storyboard, everything. I didn't have to do anything. (on the creator's face - punchline)",
+   "keep": [
+    [
+     17.965,
+     19.385
+    ],
+    [
+     19.545,
+     20.825
+    ],
+    [
+     20.985,
+     21.505
+    ]
+   ],
+   "gain": -1.4,
+   "camX": 589
+  },
+  {
+   "id": "13-novocal",
+   "take": "08",
+   "in": 8.66,
+   "out": 13.35,
+   "layout": "split",
+   "rect": "pb_t08",
+   "note": "No more annoying things like vocal drift or dealing with character inconsistencies (the 'character drift' line was cut at the creator's request)",
+   "keep": [
+    [
+     8.795,
+     13.195
+    ]
+   ]
+  },
+  {
+   "id": "14-product",
+   "take": "09",
+   "in": 2.95,
+   "out": 8.39,
+   "layout": "screen",
+   "rect": "vert",
+   "note": "anyone wearing, holding or interacting with your product",
+   "keep": [
+    [
+     3.485,
+     8.39
+    ]
+   ],
+   "gain": -0.88,
+   "flipScreen": true
+  },
+  {
+   "id": "15-podcast",
+   "take": "10",
+   "in": 5.38,
+   "out": 7.73,
+   "layout": "split",
+   "rect": "pb_t10",
+   "note": "podcast style ads ('Every-' false start cut)",
+   "keep": [
+    [
+     5.38,
+     7.73
+    ]
+   ],
+   "gain": -1.29
+  },
+  {
+   "id": "16-street",
+   "take": "11",
+   "in": 2.9,
+   "out": 4.95,
+   "layout": "screen",
+   "rect": "vert",
+   "note": "street interview ads",
+   "keep": [
+    [
+     3.175,
+     4.95
+    ]
+   ],
+   "gain": 1.04,
+   "screenOffset": 1.5
+  },
+  {
+   "id": "17-clay",
+   "take": "12",
+   "in": 4.9,
+   "out": 7.48,
+   "layout": "screen",
+   "rect": "vert_t12",
+   "note": "claymation animation ads",
+   "keep": [
+    [
+     5.075,
+     7.295
+    ]
+   ],
+   "screenOffset": 0.15
+  },
+  {
+   "id": "18-cinematic",
+   "take": "13",
+   "in": 2.2,
+   "out": 4.7,
+   "layout": "screen",
+   "rect": "vert",
+   "note": "super cinematic style ads",
+   "keep": [
+    [
+     2.315,
+     4.675
+    ]
+   ],
+   "gain": -1.79
+  },
+  {
+   "id": "19b-whiteboard",
+   "take": "14",
+   "in": 9.6,
+   "out": 11.49,
+   "layout": "screen",
+   "rect": "vert",
+   "note": "'whiteboard style ads' over the finished drawing (loop restart avoided)",
+   "keep": [
+    [
+     10.115,
+     11.49
+    ]
+   ],
+   "gain": -1.94,
+   "screenOffset": 0.745
+  },
+  {
+   "id": "20b-pixar",
+   "take": "15",
+   "in": 6.15,
+   "out": 7.55,
+   "layout": "screen",
+   "rect": "vert",
+   "note": "...style ads",
+   "keep": [
+    [
+     6.15,
+     7.55
+    ]
+   ],
+   "gain": -1.51
+  },
+  {
+   "id": "22-lego",
+   "take": "16",
+   "in": 4.3,
+   "out": 6.6,
+   "layout": "screen",
+   "rect": "vert",
+   "note": "Lego style ads",
+   "keep": [
+    [
+     4.3,
+     5.775
+    ]
+   ],
+   "screenOffset": 1.305,
+   "gain": -1.79
+  },
+  {
+   "id": "23-dreamup",
+   "take": "17",
+   "in": 1.35,
+   "out": 4.1,
+   "layout": "split",
+   "rect": "grid_split",
+   "note": "and literally anything you can dream up (live gallery borrowed from take 15 - take 17's own screen never moves)",
+   "keep": [
+    [
+     1.585,
+     2.305
+    ],
+    [
+     2.485,
+     3.845
+    ]
+   ],
+   "screenTake": "15",
+   "screenOffset": 12.415
+  },
+  {
+   "id": "24-99pct",
+   "take": "18",
+   "in": 0,
+   "out": 3.35,
+   "layout": "cam",
+   "note": "That's what 99% of media buyers miss right now with AI ads",
+   "keep": [
+    [
+     0.055,
+     3.295
+    ]
+   ],
+   "gain": 1.91,
+   "camX": 712
+  },
+  {
+   "id": "25-nothumans",
+   "take": "19",
+   "in": 0,
+   "out": 1.9,
+   "layout": "cam",
+   "note": "It's not about replacing humans",
+   "keep": [
+    [
+     0.035,
+     1.695
+    ]
+   ],
+   "gain": 1.38,
+   "camX": 712
+  },
+  {
+   "id": "26-elevating",
+   "take": "20",
+   "in": 1.15,
+   "out": 7.19,
+   "layout": "cam",
+   "note": "It's about elevating creativity",
+   "keep": [
+    [
+     1.325,
+     5.145
+    ],
+    [
+     5.285,
+     7.19
+    ]
+   ],
+   "camX": 712,
+   "gain": 0.49
+  },
+  {
+   "id": "27-cta",
+   "take": "21",
+   "in": 1.185,
+   "out": 5.4,
+   "layout": "split",
+   "note": "comment AI ads and I'll send it over",
+   "keep": [
+    [
+     1.26,
+     5.4
+    ]
+   ],
+   "gain": -0.98,
+   "rect": "gallery15",
+   "screenTake": "15",
+   "screenOffset": 16.815
+  }
+ ]
+}

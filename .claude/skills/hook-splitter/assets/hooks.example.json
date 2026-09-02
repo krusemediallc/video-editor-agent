@@ -1,0 +1,42 @@
+{
+  "source": "source/rough-cut.mov",
+  "title": "21 Seedance hooks",
+  "headline": "21 hooks, split and tightened",
+  "eyebrow": "STUDIO · HOOK REVIEW",
+  "blurb": "Say what changed THIS round first — it is the changelog the reviewer reads.",
+  "source_label": "Rough Cut - Composite.mov",
+  "version": "v1",
+  "slug": null,
+
+  "prompt": "Optional whisper hint: product names, tool names, jargon. Improves the word map.",
+
+  "audio": { "mic": 0, "system": 1 },
+
+  "pacing": {
+    "join_gap": 0.045,
+    "video_gap": 0.120,
+    "head_pad": 0.120,
+    "tail_pad": 0.080
+  },
+
+  "loop": { "consensus": 10.15, "min_dur": 10.40, "window": [9.90, 10.40] },
+
+  "hooks": [
+    {
+      "id": 1,
+      "start": 2.30,
+      "end": 36.50,
+      "kills": [],
+      "title": "Cinematic ad · sparkling water",
+      "note": ""
+    },
+    {
+      "id": 2,
+      "start": 37.70,
+      "end": 81.00,
+      "kills": [[63.90, 66.60]],
+      "title": "Fast-paced cinematic ad · Hyper Focus",
+      "note": "cut the 2nd \"let's see how it did\" (said twice, 6.3s apart)"
+    }
+  ]
+}

@@ -41,7 +41,10 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE = path.join(HERE, "..", "assets", "canvas-template.html");
 const MANIFEST = path.join(HERE, "..", "assets", "data.json");
-const FFPROBE = process.env.FFPROBE || "ffprobe";
+const FFPROBE =
+  process.env.FFPROBE ||
+  ["/opt/homebrew/bin/ffprobe", "/usr/local/bin/ffprobe"].find((p) => existsSync(p)) ||
+  "ffprobe";   // PATH last: a Homebrew Mac whose non-login shell lacks /opt/homebrew/bin still works
 const PUBLISH_SH =
   process.env.HERENOW_PUBLISH || "~/.agents/skills/here-now/scripts/publish.sh";
 

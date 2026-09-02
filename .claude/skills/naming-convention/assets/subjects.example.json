@@ -1,0 +1,89 @@
+{
+ "_note": "Product + ad style per hook, read off the ads themselves and the Arcads prompt panel (reference image), NOT from cuts.json titles. Two of those titles are wrong: H01 was labelled 'sparkling water' (that was the reference VIDEO's subject, the style reference; the reference IMAGE and the ad are a branded cap) and H05 was labelled 'Gut Check' (it is the THUMB-STOPPER protein bar).",
+ "items": {
+  "1": {
+   "subject": "cap",
+   "style": "cinematic"
+  },
+  "2": {
+   "subject": "hyperfocus",
+   "style": "cinematic"
+  },
+  "3": {
+   "subject": "hyperfocus",
+   "style": "cinematic"
+  },
+  "4": {
+   "subject": "gut-check",
+   "style": "whiteboard"
+  },
+  "5": {
+   "subject": "thumb-stopper",
+   "style": "asmr"
+  },
+  "6": {
+   "subject": "lookalike",
+   "style": "cinematic"
+  },
+  "7": {
+   "subject": "lookalike",
+   "style": "cinematic"
+  },
+  "8": {
+   "subject": "launch-day",
+   "style": "street-interview"
+  },
+  "9": {
+   "subject": "launch-day",
+   "style": "podcast"
+  },
+  "10": {
+   "subject": "hyperfocus",
+   "style": "street-interview"
+  },
+  "11": {
+   "subject": "cap",
+   "style": "knitted-yarn"
+  },
+  "12": {
+   "subject": "cap",
+   "style": "anime"
+  },
+  "13": {
+   "subject": "burn-rate",
+   "style": "pixar"
+  },
+  "14": {
+   "subject": "burn-rate",
+   "style": "anime"
+  },
+  "15": {
+   "subject": "mute-button",
+   "style": "pixar"
+  },
+  "16": {
+   "subject": "algorithm-fuel",
+   "style": "pixar"
+  },
+  "17": {
+   "subject": "algorithm-fuel",
+   "style": "claymation"
+  },
+  "18": {
+   "subject": "conversion-cola",
+   "style": "anime"
+  },
+  "19": {
+   "subject": "pixel-perfect",
+   "style": "lego"
+  },
+  "20": {
+   "subject": "lookalike",
+   "style": "lego"
+  },
+  "21": {
+   "subject": "conversion-cola",
+   "style": "knitted-yarn"
+  }
+ }
+}

@@ -1,0 +1,6 @@
+# One extended regex per line. Names that must never appear in this public repo:
+# clients and partners, people, internal hostnames, private repo names, account ids.
+# Copy to scripts/scrub-denylist.local.txt (gitignored) and fill in your own.
+Acme Corp
+acme-internal
+\bJane Doe\b

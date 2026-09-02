@@ -31,6 +31,35 @@ EXPENSIVE L4 inspection packets: contact sheet + marked waveform + word-level
              transcript + audio stats for one window — verify before changing an edit
 ```
 
+## Run the engine first (`tools/video-qa`)
+
+The procedure below is implemented as a standalone node package. Install once
+(`npm --prefix tools/video-qa install`), then:
+
+```bash
+# reel-recut lane — the manifest build_reel.py dumps next to the spec, + SOURCE-time words
+npm --prefix tools/video-qa run qa:video -- --manifest <p>/spec.qa-manifest.json --words <p>/transcript.json
+
+# hyperframes lane — the picture-lock EDL + OUTPUT-time words (+ optional placement manifest)
+npm --prefix tools/video-qa run qa:video -- --lane hyperframes --video <p>/out.mp4 \
+    --edl <p>/edl.json --words <p>/words-master.json --words-are-output [--placement <p>/preview/manifest.json]
+
+# any mp4, no edit intent — L1 + L3 only
+npm --prefix tools/video-qa run qa:video -- --video <p>/out.mp4
+
+# a Layer-4 inspection packet for one window
+npm --prefix tools/video-qa run qa:inspect -- --manifest <p>/spec.qa-manifest.json --start 31.5 --end 33.0
+```
+
+Flags: `--skip-semantic` (no Gemini), `--fps N`, `--instructions file.txt` (the original
+brief, given to Gemini), `--no-cache`, `--out dir`, `--json`. Exit **0** PASS · **1**
+PASS_WITH_WARNINGS · **2** FAIL. Reports land in `<video dir>/_qa/<stem>/qa-report.{md,json}`
+with packets under `inspect/<issue-id>/`. Relative paths resolve from the directory you ran
+the command in; `.env` is read from there first, then from this pack's root. Full flag and
+environment reference: `tools/video-qa/README.md`.
+
+When the engine cannot run (no node, a lane it has no adapter for), do the layers by hand:
+
 You (the agent) ARE the orchestrator: run the commands, parse the logs, apply the
 calibration gates, write the report. Each layer is a documented procedure, not a black box.
 
@@ -146,7 +175,9 @@ rounds**, then stop and escalate. Never loop on LOW or subjective issues.
 
 ## Dependencies
 
-- **ffmpeg / ffprobe** on PATH (or `FFMPEG_PATH` / `FFPROBE_PATH` env vars). Note: many
+- **node >= 20** + `npm --prefix tools/video-qa install` for the engine (tsx, zod, dotenv).
+- **ffmpeg / ffprobe** on PATH (or `FFMPEG_PATH` / `FFPROBE_PATH` env vars; the engine also
+  looks in `/opt/homebrew/bin` and `/usr/local/bin`). Note: many
   builds lack `drawtext` — text on images goes through PIL (`scripts/draw_markers.py`).
 - **whisper**, either via `npx hyperframes transcribe` (whisper.cpp under the hood; install
   with `npx hyperframes`) or a local `whisper-cli` + ggml model. Only needed for L2
@@ -154,3 +185,5 @@ rounds**, then stop and escalate. Never loop on LOW or subjective issues.
 - **python3** for the helper scripts; **PIL (Pillow)** optional, only for waveform markers.
 - **GEMINI_API_KEY** in a `.env` at repo root for L3 (`GEMINI_QA_MODEL` optional, default
   `gemini-flash-latest`). Missing key = L3 skipped, everything else runs.
+- **OPENAI_API_KEY** (optional) — cloud whisper-1 fallback when whisper.cpp is unavailable
+  (`VIDEO_QA_TRANSCRIBER=auto|whispercpp|openai|none`).

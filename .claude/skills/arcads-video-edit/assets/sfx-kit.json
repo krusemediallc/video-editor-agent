@@ -1,0 +1,15 @@
+{
+  "normalize_db": -3.0,
+  "min_peak_db": -12.0,
+  "effects": [
+    {"name": "pop",     "prompt": "a single clean UI pop click, crisp bubble pop, punchy, sharp attack, dry, no music", "seconds": 0.5},
+    {"name": "click",   "prompt": "a short dry mechanical tick click, keyboard key press, close-mic, sharp attack, no music", "seconds": 0.5},
+    {"name": "thud",    "prompt": "heavy rubber stamp slam onto paper, deep punchy thud, sharp attack, dry, no music", "seconds": 0.8},
+    {"name": "sub",     "prompt": "cinematic sub bass drop impact, deep short braam with falling pitch, punchy sharp attack, no music", "seconds": 1.4},
+    {"name": "scratch", "prompt": "loud fast marker strokes crossing out text on paper, close-mic, sharp attack, dry", "seconds": 0.9},
+    {"name": "ding",    "prompt": "single bright bell ding, crisp achievement chime, short, sharp attack, dry", "seconds": 0.6},
+    {"name": "shimmer", "prompt": "soft glassy shimmer sweep, elegant logo reveal, bright, clean, no music", "seconds": 1.1},
+    {"name": "riser",   "prompt": "tense rising synth riser building to a cut, white noise sweep upward, no music bed, ends abruptly", "seconds": 2.0},
+    {"name": "swipe",   "prompt": "short soft airy swipe, paper card sliding across a desk, clean, dry, no music", "seconds": 0.6}
+  ]
+}

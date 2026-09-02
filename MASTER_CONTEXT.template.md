@@ -36,6 +36,22 @@ empty fields get offered for population as work reveals the answers.
 - **Bed level vs voice:** (dB offset if you have a preference)
 - **SFX density:** (every beat / sparse / only on cards)
 
+## Projects directory (where the videos live)
+
+- **Projects directory:** (absolute path; default = this pack's `outputs/`. Point it at your
+  own working repo's media folder if the videos live elsewhere — the skills create
+  `<projects dir>/<project-slug>/` and never move media into this pack)
+- **Per-project layout conventions:** (e.g. `source.mp4`, `output-vN.mp4`, `review/`, `_qa/`)
+- **Raw footage queue(s):** (where new recordings land)
+- **Named past edits** (for "edit it like X" requests): (slug → what it was)
+
+## Hard rules (the regimes this reviewer holds you to)
+
+- **Face rule:** (e.g. "never place a graphic over the speaker's face")
+- **Full-screen takeovers:** (organic feed vs brand-run ads — when are they expected, when banned?)
+- **Approved copy on paid deliverables:** (e.g. "never trim for pacing; only marked alternates and flubs")
+- **Copy rules for on-screen text:** (em dashes? hashtags? banned words? a required copy-review pass?)
+
 ## Reviewer workflow
 
 - **Who reviews:** (role, not name — e.g. "the founder", "an editor")
@@ -43,6 +59,13 @@ empty fields get offered for population as work reveals the answers.
 - **Review slug convention:** (e.g. `<project>-review`)
 - **Revision expectations:** (e.g. "expect 3–5 rounds", "batch notes per round")
 - **Sign-off signal:** (what counts as approved)
+- **Canvas config defaults:** (`eyebrow`, `author`, accent colors for video-review-canvas)
+
+## Machine and credentials
+
+- **Binaries:** (ffmpeg/ffprobe/whisper paths if not on PATH; sandbox quirks; GPU render flag)
+- **Where each key lives:** (which `.env` holds ELEVENLABS_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY /
+  ARCADS_*; never paste the values here — paths only)
 
 ## Learnings
 
