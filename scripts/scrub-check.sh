@@ -61,7 +61,7 @@ scan() { # $1 label, $2 regex (ERE), $3 optional grep flags (e.g. -i)
 }
 scan "SECRET        " '(sk-[A-Za-z0-9_-]{16,}|sk_(live|test)_[A-Za-z0-9]{8,}|xox[abprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{30,}|EAA[A-Za-z0-9]{40,}|gh[pousr]_[A-Za-z0-9]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY|Bearer [A-Za-z0-9._-]{30,}|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}|(api[_-]?key|secret|token|passw(or)?d|auth)[A-Za-z0-9_]*[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9._/+:-]{16,})' -i
 scan "PRIVATE HOST  " '(\b100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}\b|\b192\.168\.[0-9]{1,3}\.[0-9]{1,3}\b|\b10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\b|smb://)'
-scan "PERSONAL PATH " '(/Volumes/[A-Za-z]|/Users/[A-Za-z._-]+/|Caleb Personal)'
+scan "PERSONAL PATH " '(/Volumes/[A-Za-z]|/Users/[A-Za-z._-]+/)'
 scan "EMAIL         " '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,63}([^A-Za-z0-9_-]|$)'
 scan "REVIEW SLUG   " '(https?://[A-Za-z0-9.-]+\.here\.now|(^|[^A-Za-z0-9._${}<>-])[A-Za-z0-9-]+\.here\.now)'
 scan "MONEY         " '\$[0-9]{1,3}(,[0-9]{3})*(\.[0-9]+)?[kK]?\b[^|]{0,40}(deal|fee|paid|brand|budget|per (video|reel|post))'
