@@ -8,8 +8,7 @@ before) and exposes this pack's skills through relative symlinks (`.claude/skill
 ../../../../Video Editor Agent/.claude/skills/<name>`, a `link-video-editor-skills.sh` helper
 there re-links new skills). Improvements from real edits are written here as generic process;
 the personal layer (brand, machine paths, reviewer habits, clients, fees) lives in the gitignored
-`MASTER_CONTEXT.md`. The repo stays **private** until the user reviews the scrubbed diff and
-flips it public himself.
+`MASTER_CONTEXT.md`. **Flipped public later the same day** (see below).
 
 **Done**
 - **Merged** the working repo's newer `branded-ad-edit` content into this copy: the automated
@@ -62,8 +61,14 @@ flips it public himself.
 - "Verify in the medium the reviewer consumes, with a different tool than you built with" is
   now a CLAUDE.md rule, not just a hook-variations note.
 
+**Public flip (same day).** Before flipping, every unique blob in the repo's history (180 blobs, 9
+commits) was scanned for secrets, private hosts, personal paths, e-mails, review slugs, fee amounts
+and deny-list names: no hits beyond the scrub script's own regex text and brand eyebrows in old
+versions of files already genericized; `.env`, `MASTER_CONTEXT.md`, the deny-list and media were
+never committed. `gh repo edit --visibility public`, verified anonymously. From here on **every push
+publishes** — the pre-commit/pre-push scrub is the gate; `SCRUB_ALLOW=1` only with a stated reason.
+
 **Next**
-- The user reviews the diff and flips the repo public himself (`gh repo edit --visibility public`).
 - The working repo is writing a user-specific wrapper skill for its organic-reel takeover lane;
   once that session finishes, distil the generic lane (base cut first, one comp, speaker in a
   circle PIP, "pointing at the screen" sections untouched) into `reel-recut/references/`.
