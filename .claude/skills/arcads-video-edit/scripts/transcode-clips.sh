@@ -1,4 +1,5 @@
-#!/bin/zsh
+#!/usr/bin/env bash
+shopt -s nullglob
 # Dense-GOP proxies of every generated Arcads clip so any of them can be a floating card or a
 # montage cut without freezing on seek (branded-ad-edit gotcha #5). 720x1280 source -> 1080x1920.
 # Usage: GEN=<generated-clip library> OUT=<project>/mg/comp/assets/clips bash transcode-clips.sh

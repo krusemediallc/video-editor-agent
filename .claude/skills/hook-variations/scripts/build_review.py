@@ -39,7 +39,7 @@ def main():
                                                     "proxy filenames so browsers do not "
                                                     "serve a cached older cut")
     ap.add_argument("--title", default=None)
-    ap.add_argument("--eyebrow", default="MR PAID SOCIAL · VARIANT REVIEW")
+    ap.add_argument("--eyebrow", default="VARIANT REVIEW")
     ap.add_argument("--h1", default=None)
     ap.add_argument("--map", help="subjects map (naming-convention) for card titles")
     ap.add_argument("--height", type=int, default=1280, help="proxy height")

@@ -45,6 +45,15 @@ flips it public himself.
   for working-folder mode. The earlier uncommitted `hook-variations` + `naming-convention` work
   is included in this commit.
 
+- **GPT review (Codex) of the commit:** 11 findings, 9 applied — the scrub check now scans the
+  STAGED blobs (not the working tree), the secret / e-mail / review-slug patterns are broader and
+  the deny-list matches case-insensitively; `arcads_gen.py` resolves `ARCADS_PRODUCT_ID` /
+  `ARCADS_PROJECT_ID` after the `.env` is loaded (they were read at import time and the legacy
+  `PRODUCT_ID` name was the only one honoured); `transcode-clips.sh` is bash + nullglob;
+  `inspect-video --out` resolves from the invoker; three all-caps brand eyebrows and one internal
+  project path genericized. Declined: renaming the `palmier` QA lane (a third-party editing tool,
+  not a client) — kept.
+
 **Lessons kept**
 - BSD `sed` has no `\b`: a rename silently did nothing; only the typecheck caught it. Always
   typecheck a ported package before trusting a green install.

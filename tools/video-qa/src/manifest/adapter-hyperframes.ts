@@ -4,7 +4,7 @@
  * Builds the normalized EditManifest from the artifacts the branded-ad-edit /
  * HyperFrames builds already produce:
  *  - a placement manifest: [{id,label,start,dur,track,kind}] (output-time
- *    SFX/card/media placements, e.g. Videos/grok-bot-edit/preview/manifest.json)
+ *    SFX/card/media placements, e.g. <project>/preview/manifest.json)
  *  - optionally an EDL: {fps, windows:[{raw_start,raw_end,master_start,master_end,…}]}
  *    (the picture-lock cut list, e.g. <project>/v916-edl.json)
  *  - optionally output-time words: [{text,start,end,win?}] (words-master.json —

@@ -91,7 +91,7 @@ facts = "".join([
 html = open(os.path.join(HERE, "..", "assets", "canvas-template.html")).read()
 for k, v in {
     "__TITLE__": cfg.get("title", "Hook review"),
-    "__EYEBROW__": cfg.get("eyebrow", "MR PAID SOCIAL · HOOK REVIEW"),
+    "__EYEBROW__": cfg.get("eyebrow", "STUDIO · HOOK REVIEW"),
     "__H1__": cfg.get("headline", "Hooks, split and tightened"),
     "__VLABEL__": VLABEL,
     "__BLURB__": cfg.get("blurb", "Each hook is its own video, tightened so the only "

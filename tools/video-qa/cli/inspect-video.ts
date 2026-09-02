@@ -41,9 +41,9 @@ async function main() {
     return;
   }
 
-  const outDir =
-    arg("out") ??
-    resolveFromInvoker(
+  const outDir = arg("out")
+    ? resolveFromInvoker(arg("out")!)
+    : resolveFromInvoker(
       manifest.video,
       "..",
       "_qa",

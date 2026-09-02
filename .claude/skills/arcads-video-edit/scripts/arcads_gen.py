@@ -75,6 +75,19 @@ LOG = HERE / "_log.jsonl"
 AUTH = None  # set by load_auth()
 
 
+def resolve_ids(args, env):
+    """(productId, projectId): CLI flag, else the loaded .env (ARCADS_* or the legacy unprefixed
+    names), else the process environment. Called AFTER the .env is read, never at import time."""
+    pid = (args.product_id or env.get("ARCADS_PRODUCT_ID") or env.get("PRODUCT_ID")
+           or os.environ.get("ARCADS_PRODUCT_ID") or "")
+    if args.project_id is not None:
+        prj = args.project_id
+    else:
+        prj = (env.get("ARCADS_PROJECT_ID") or env.get("PROJECT_ID")
+               or os.environ.get("ARCADS_PROJECT_ID") or "")
+    return pid, prj
+
+
 # ----------------------------------------------------------------------------- auth / env
 
 def read_env(path):
@@ -282,9 +295,10 @@ def build_parser():
     ap.add_argument("--allow-mixed-refs", action="store_true",
                     help="allow referenceImages together with referenceVideos (500 on 2.0; unverified on 2.5)")
     ap.add_argument("--slug", help="output basename (default: derived from the prompt)")
-    ap.add_argument("--product-id", default=None, help=f"default: PRODUCT_ID from .env or {DEFAULT_PRODUCT_ID}")
-    ap.add_argument("--project-id", default=DEFAULT_PROJECT_ID,
-                    help="Arcads project to file the asset under ('' to omit)")
+    ap.add_argument("--product-id", default=None,
+                    help="default: ARCADS_PRODUCT_ID (or PRODUCT_ID) from .env / the environment; required")
+    ap.add_argument("--project-id", default=None,
+                    help="Arcads project to file the asset under; default ARCADS_PROJECT_ID from .env / the environment ('' to omit)")
     ap.add_argument("--env-file", help="path to a .env with ARCADS_BASIC_AUTH or ARCADS_API_KEY")
     ap.add_argument("--poll", metavar="ASSET_ID", help="skip submission; poll + download an existing asset id")
     ap.add_argument("--no-poll", action="store_true", help="submit only; print the asset id and exit")
@@ -307,7 +321,7 @@ def main(argv=None):
     # ---- modes that need no prompt
     if args.check:
         AUTH, src, env = load_auth(args.env_file)
-        pid = args.product_id or env.get("PRODUCT_ID") or DEFAULT_PRODUCT_ID
+        pid, _ = resolve_ids(args, env)
         print(f"auth loaded from {src}")
         for ep in (f"/v1/products/{pid}/folders?pageSize=5", "/v1/brands?pageSize=5",
                    "/v1/assets/2e4b41d6-68cc-4d06-bc86-4a6b50e4e916"):
@@ -357,19 +371,20 @@ def main(argv=None):
     est = CREDITS_PER_SEC[args.resolution] * args.duration
     if args.reference_video or args.reference_audio:
         est *= 1.32
-    env_pid = read_env(args.env_file).get("PRODUCT_ID") if args.env_file else None
+    pre_env = read_env(args.env_file) if args.env_file else {}
+    pid, prj = resolve_ids(args, pre_env)   # re-resolved after the .env is actually loaded (below)
 
     payload = {
         "model": MODEL,
-        "productId": args.product_id or env_pid or DEFAULT_PRODUCT_ID,
+        "productId": pid,
         "prompt": prompt,
         "duration": args.duration,
         "resolution": args.resolution,
         "aspectRatio": args.aspect,
         "audioEnabled": bool(args.audio),
     }
-    if args.project_id:
-        payload["projectId"] = args.project_id
+    if prj:
+        payload["projectId"] = prj
 
     print(f"model={MODEL} duration={args.duration}s {args.resolution} {args.aspect} audio={payload['audioEnabled']}")
     print(f"refs: images={len(ref_images)} videos={len(args.reference_video)} audios={len(args.reference_audio)}"
@@ -389,8 +404,14 @@ def main(argv=None):
 
     # ---- live
     AUTH, src, env = load_auth(args.env_file)
-    if not args.product_id and env.get("PRODUCT_ID"):
-        payload["productId"] = env["PRODUCT_ID"]
+    pid, prj = resolve_ids(args, env)
+    if not pid:
+        sys.exit("ARCADS_PRODUCT_ID not set (put it in .env, the environment, or pass --product-id)")
+    payload["productId"] = pid
+    if prj:
+        payload["projectId"] = prj
+    else:
+        payload.pop("projectId", None)
     print(f"auth loaded from {src}")
     if not args.yes:
         ans = input(f"Submit and spend ~{est:.0f} credits? [y/N] ").strip().lower()
