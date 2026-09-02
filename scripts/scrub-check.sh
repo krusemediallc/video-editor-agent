@@ -51,7 +51,11 @@ PLACEHOLDER='(\.\.\.|…|<[^>]*>|your[-_ ]|xxx|example|placeholder|\$\{|\$[A-Z_]
 scan() { # $1 label, $2 regex (ERE), $3 optional grep flags (e.g. -i)
   local label="$1" re="$2" flags="${3:-}" out
   out="$(cd "$SCANROOT" && printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 grep -nIE $flags --binary-files=without-match -e "$re" -- 2>/dev/null | cut -c1-160)"
-  [ "$label" = "SECRET        " ] && out="$(printf '%s\n' "$out" | grep -vE "$PLACEHOLDER" || true)"
+  if [ "$label" = "SECRET        " ]; then
+    out="$(printf '%s\n' "$out" | grep -vE "$PLACEHOLDER" || true)"
+    # an all-letters "value" is a variable NAME being talked about, not a key (real keys carry digits/punctuation)
+    out="$(printf '%s\n' "$out" | grep -viE '(api[_-]?key|secret|token|passw(or)?d|auth)[A-Za-z0-9_]*[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z_]+([^A-Za-z0-9._/+:-]|$)' || true)"
+  fi
   [ -n "$out" ] && { printf '%s\n' "$out" | while IFS= read -r line; do say "$label  $line"; done; hits=$((hits+1)); }
   return 0
 }
@@ -59,7 +63,7 @@ scan "SECRET        " '(sk-[A-Za-z0-9_-]{16,}|sk_(live|test)_[A-Za-z0-9]{8,}|xox
 scan "PRIVATE HOST  " '(\b100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}\b|\b192\.168\.[0-9]{1,3}\.[0-9]{1,3}\b|\b10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\b|smb://)'
 scan "PERSONAL PATH " '(/Volumes/[A-Za-z]|/Users/[A-Za-z._-]+/|Caleb Personal)'
 scan "EMAIL         " '[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,63}([^A-Za-z0-9_-]|$)'
-scan "REVIEW SLUG   " '([A-Za-z0-9-]+\.here\.now|https?://[^[:space:]"'"'"'<>]*\.here\.now)'
+scan "REVIEW SLUG   " '(https?://[A-Za-z0-9.-]+\.here\.now|(^|[^A-Za-z0-9._${}<>-])[A-Za-z0-9-]+\.here\.now)'
 scan "MONEY         " '\$[0-9]{1,3}(,[0-9]{3})*(\.[0-9]+)?[kK]?\b[^|]{0,40}(deal|fee|paid|brand|budget|per (video|reel|post))'
 if [ -f scripts/scrub-denylist.local.txt ]; then
   while IFS= read -r re; do
