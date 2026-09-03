@@ -108,6 +108,28 @@ need exact word times — required to remove a stumble or to place a CTA callout
 Save the word JSON and point the spec's `words` field at it so the QA manifest carries
 remapped word timings.
 
+### 3b. Word onsets for anything word-synced: do not trust one full-file pass
+
+If the cut feeds a motion-graphics comp (hits and cards anchored on words), or the seam QA keeps
+flagging "clipped word" on silence-origin cuts that an isolated re-probe hears intact, the word
+timings are the problem, not the cut. Measured on a generated talking head with dead-clean pauses:
+
+- a full-file **whisper.cpp large-v3** pass smeared word onsets INTO the surrounding silence
+  ("ByteDance" placed 0.7 s inside a silencedetect span), so the manifest lane reported four
+  clipped words that were all false positives;
+- transcribing each 1-2 s keep span in isolation was worse: whisper.cpp token offsets collapse
+  to the segment start on short clips and it hallucinated words ("and many more");
+- **OpenAI whisper-1 `verbose_json` word times** ran a consistent ~0.15 s late and never smeared
+  into silence; and the **silencedetect edges are the true onset of every phrase-initial word.**
+
+`scripts/map-words.py <project-dir>` combines the two: cloud words shifted by the measured
+lateness, assigned to the keep spans from the qa-manifest, the first word of every span snapped
+to the span edge, words that only exist past the media end dropped. It writes `words-cut.json`
+(cut time, what a comp's `W("word")` reads), `words-master.json` / `v916-edl.json` /
+`edl.json` (the shapes `qa:video --lane hyperframes` wants) and `source-words-accurate.json`
+(point the spec's `words` at it and regenerate the manifest with `--qa-manifest-only`). On the
+proving run the manifest lane went from 4 HIGH to 0 issues on 22 cuts with no cut touched.
+
 ## 4. Author the spec (the craft)
 Copy `assets/spec.example.json`. Captions are the main work:
 - ~2s per card, <= ~6 words, <= 2 lines.

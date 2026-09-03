@@ -158,3 +158,45 @@ Skills written (9):
 Also created: README.md, CLAUDE.md, ARCHITECTURE.md,
 MASTER_CONTEXT.template.md, .env.example, .gitignore, footage/ and outputs/
 placeholders.
+
+## 2026-09-02 — organic reel from a generated likeness, two looks, one generator; reel-recut gains `map-words.py`
+
+Two organic reels built from the SAME 30 s script, each a Seedance 2.5 talking head generated from
+a different reference clip (a locked-off studio shot and a handheld selfie), so the only variable
+between the two edits was the footage. Lane: `reel-recut` raw cut (silence cut to a ~50 ms residual
+gap, 22 cuts per look) → one HyperFrames generator shared by both projects (`build.mjs <project>`,
+per-look geometry in a `look.json`: PIP scale/anchor, split anchor, clip names) → both QA lanes →
+review canvas. Six beats: face-only hook, PIP reveal with the real reference clip and voice card
+wired into a model node, full-face breath, a split with 30 s vs 15 s bars + a strip of output
+frames, a PIP terminal receipt, the comment callout with a DM mock. 44 SFX hits, no music bed.
+
+**Skill change — `reel-recut/scripts/map-words.py` + workflow.md § 3b.** The manifest-lane seam QA
+reported 4 HIGH "clipped word" issues on the studio cut; isolated re-probes heard every word
+intact. Root cause was the word map, not the cut: a full-file whisper.cpp large-v3 pass smeared
+onsets INTO the silences (a phrase-initial word placed 0.7 s inside a silencedetect span), and
+transcribing each 1–2 s keep span in isolation was worse (token offsets collapse to the segment
+start on short clips; it hallucinated words). Cloud whisper-1 word times ran a consistent ~0.15 s
+late and never smeared; the silencedetect edges are the true onset of every phrase-initial word.
+The script combines the two (shift, assign to keep spans, snap span heads, drop words that only
+exist past the media end) and writes the cut-time word map a comp anchors on plus the QA-lane
+shapes. Same cuts, regenerated manifest: 0 issues on 22 cuts, both looks.
+
+**Lessons kept (generic):**
+1. **A caption whose window straddles a mode change lands in the wrong mode.** A full-mode caption
+   that starts before a PIPIN stays at the bottom through the takeover and crosses the circle (the
+   face). Split the phrase at the boundary or null it when the graphic already carries the words.
+2. **Full-mode chips must sit above the video layer.** Anything below the `#vclip` z-index is
+   invisible whenever the video is full frame; it only shows inside takeovers.
+3. **Two CSS classes with the same name in one generator** (a reveal chip wrapper and the terminal
+   rail chips both called `.rchip`) silently override each other; the flex centring vanished.
+4. **A hit anchored on the last word before a silence cut never plays.** The studio cut left 0.09 s
+   between "voice" and the next phrase; everything anchored there fired after the PIPOUT. Anchor on
+   the word two or three back and let it hold.
+5. **zsh eats `$var:l`** (`offset=$off:linear=true` reached ffmpeg as `0.37inear=true`). Brace every
+   variable that is followed by a colon.
+6. **The hyperframes QA lane over-flags silence-derived cuts** (it treated a 30 ms "came out" word
+   pair as a repeated word); the manifest lane with accurate source words is the authority there.
+   Verify any flag with an isolated re-probe of the RENDER before touching a cut.
+7. AI-actor audio arrived at −27 LUFS on one look and −16 on the other; normalise the base to
+   −14 LUFS before the comp so one SFX gain table serves both, then limiter-master the render
+   (`-c:v copy`) and re-measure — the SFX sum pushed the raw render to −0.1 dBTP.
