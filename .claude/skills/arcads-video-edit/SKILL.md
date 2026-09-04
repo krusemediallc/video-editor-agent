@@ -109,6 +109,15 @@ background. The pass has its own sub-pipeline:
 7. Render (7 min, run it as a **tracked background job** — a foreground shell dies at 10 min),
    master (two-pass loudnorm, limiter 0.79–0.84, TP ≤ −1.3), the `video-qa` engine, copy review, canvas.
 
+### 2b. Hook rebuilds — see [references/hook-rebuilds.md](references/hook-rebuilds.md)
+
+When notes come back on the hooks after the body is locked, the body never re-renders: it is stream-copied
+bit-identical into every deliverable. Hooks cut from a long screen recording are burnt-in composites with the
+speaker's webcam already baked in, so the composite becomes the camera subject (one wrapper, named crops, the
+bubble cut from its own circle) and every crop is bounded by that burnt-in circle. One config per hook, one
+generator, and a fan-out of one agent per hook — which doubles as a review panel: the defects worth having
+are the ones several agents report about the *approved* layout.
+
 ### 3. Review loop — see [references/review-loop.md](references/review-loop.md)
 
 Reply leads with the canvas URL every round. Read every note back with `read-notes.mjs`, seek to
@@ -144,6 +153,7 @@ the file, not the log — it found four overlapped frames a snapshot pass missed
 | [references/graphics-pass.md](references/graphics-pass.md) | the whole motion-graphics pass: research, design panel, camera, takeovers, captions, sound, render |
 | [references/review-loop.md](references/review-loop.md) | publishing to the canvas, reading notes, what the creator's notes have meant, the measurement-first fix pattern |
 | [references/brand-safety.md](references/brand-safety.md) | before the copy review, and whenever a brand will run the ad from its own account |
+| [references/hook-rebuilds.md](references/hook-rebuilds.md) | rebuilding N hooks onto a body that is already signed off (burnt-in composites, per-hook configs, fan-out) |
 | [references/gotchas.md](references/gotchas.md) | before starting, and whenever a frame looks wrong |
 | `scripts/` | the exact tools, copied into `<project>/` and `<project>/mg/` and run from there |
 | `assets/` | the real `edl.json`, SFX kit, canvas config and b-roll prompt from the shipped ad |
