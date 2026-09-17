@@ -1,5 +1,63 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-16 — New skill: `talking-head-image-overlays`, deconstructed from a reference reel and proven on unrelated footage
+
+A creator-supplied reference reel (82 s, 720x1280) was taken apart by measurement, the style was
+rebuilt on a completely different talking-head video, and the result became a new skill. Five
+forensic passes ran in parallel over ffmpeg evidence (2 fps contact sheets, full-res before/after
+pairs at every detected change, spectrogram + waveform + word-level transcript), then three
+adversarial checks.
+
+**The headline: the reference has ZERO camera cuts.** One continuous 82 s take; every visual
+change is a composite. Scene detection returning nothing was the finding, not a failure — the
+lesson is now in `method.md` §1, along with the fact that the events list built that way missed
+6 of 34 container transitions.
+
+**What the measurement overturned.** The naive read (a persistent serif title, overlays that
+never touch the face) was wrong on both counts. The serif appears exactly twice — an opening
+plate 0.000–2.533 s and a CTA banner from 75.400 s to the final frame — with a bare top band for
+the 73 s between. The designed cards are opaque 80%x80% takeovers that bury the speaker for ~35%
+of the runtime, and two image rects cut straight through his eyebrows: **the reference has no
+face-avoidance logic at all.**
+
+**Two measured rules worth keeping.** Captions are not centred per line — each *sentence* is a
+block centred on its widest line with every line left-aligned to that edge (verified on 11
+sentences, predicted-vs-measured left edge within 1 px). And the CTA banner leads its own keyword
+by 3.34 s: it lands on the first CTA verb of the outro and never leaves.
+
+**The audio finding was the most surprising: there is no sound design at all.** No music bed (gap
+floor varies 20.5 dB across 35 pauses; a bed pins it to 2–3 dB) and zero SFX on any of the 28
+overlay events — seven overlays pop into near-digital silence. −14.8 LUFS, −0.6 dBTP, and 15.3%
+of runtime retained as pauses with breaths left in.
+
+**Proving it on other footage surfaced what the deconstruction could not.** The test video's base
+cut had been silence-cut to *zero* air, the exact inverse of the style, so a new base was built by
+capping each pause at 0.25 s rather than removing it (44.8% silence → 12.5%, 88.6 s → 57.4 s).
+Four renders to solid:
+
+1. **v1** — a guessed face floor of 402 px squeezed portrait inserts to a 163 px sliver.
+   Measuring the real thing over 57 frames gave min eye line 704 → floor 680, a 278 px error.
+   That measurement is now `scripts/measure-face-band.py`.
+2. **v2** — the pill overflowed its fixed box and the CTA ran off frame; both auto-size now.
+3. **v3** — a narrow insert bottom-anchored to the eye floor landed on the subject's cap and read
+   as a hat. Hence two floors: wide sources may reach `EYE_FLOOR`, narrow ones must clear
+   `HEAD_FLOOR`. The reference never hit this because its inserts were all landscape.
+4. **v4** — captions still ran off frame because widths were measured before the webfonts
+   loaded. Gating on `document.fonts.ready` fixed it. This bug survived two full renders and is
+   now a named trap.
+
+Mastering to −14.5 LUFS took the QA engine from PASS_WITH_WARNINGS to PASS, and hit the repo's
+own logged zsh trap (`$M:linear` → `Invalid chars 'inear=true'`) on the way.
+
+**Skills touched.** New `talking-head-image-overlays/` (SKILL.md, `references/style-system.md`,
+`references/method.md`, `scripts/measure-face-band.py`). `video-edit-pipeline` gained the lane in
+its routing table, its Stage-0 lane list and its description. ARCHITECTURE.md updated.
+
+**Lesson kept (generic):** *a style's geometry is two different things.* Card geometry was rigid
+to the pixel across seven instances and transfers verbatim; the image band was never fixed and
+must be re-derived from each subject's own eye line. Copying the second kind is how a clone ends
+up with a 163 px sliver, or a graphic hat.
+
 ## 2026-09-02 — This pack becomes the only home for video editing; the working repo symlinks in
 
 **Decision (the user):** every video-editing skill, script and process lives here, and only

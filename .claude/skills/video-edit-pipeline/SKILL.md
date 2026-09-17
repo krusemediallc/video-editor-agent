@@ -8,7 +8,8 @@ description: >
   clip into a finished reel", "do the full edit", "make this look like their
   winning ads", or a revision request on a previously delivered edit. It routes
   every stage to the right specialist skill (reel-style-clone, branded-ad-edit,
-  reel-recut, arcads-video-edit, hook-splitter, sound-design, ai-audio-sound-design,
+  reel-recut, arcads-video-edit, talking-head-image-overlays, hook-splitter,
+  sound-design, ai-audio-sound-design,
   video-qa, video-review-canvas, edl-tighten, hook-variations, naming-convention,
   capcut-export) and
   owns the intake → style → edit → QA → deliver → revise loop end to end. Do
@@ -76,6 +77,12 @@ masters, `review/`, `_qa/`.
      that needs many openers → **hook-variations** (Stage 6b).
    - **AI-actor / generated footage that sounds sterile** → **ai-audio-sound-design**
      (audio-only; the picture is untouched).
+   - an **uncut take carrying stacked image overlays** (nothing is cut; a title
+     plate, found-footage rects above the eyeline, opaque skeleton-UI cards that
+     build themselves, word-by-word karaoke, a CTA banner that lands early) →
+     **talking-head-image-overlays**, then Stages 4-6. Note this lane INVERTS the
+     usual base cut: it keeps ~15% of runtime as pauses instead of removing them,
+     and ships no SFX or music at all.
    Check `MASTER_CONTEXT.md` § Hard rules first: it says which regime the reviewer
    holds you to (face rule, full-screen takeovers, approved-copy cuts).
 
@@ -226,6 +233,7 @@ draft opens before telling the user it is ready.
 | Multi-take screen + camera + mic demo → EDL base cut → motion-graphics pass | arcads-video-edit |
 | One long recording of many hooks → one tightened video per hook (+ gallery canvas) | hook-splitter |
 | AI-actor footage: ambience, room reverb, bleeps, watermark whine, loudness master | ai-audio-sound-design |
+| Uncut take + hard-cut image overlays on content nouns (title plate, inserts above the eyeline, skeleton-UI cards, early CTA banner) | talking-head-image-overlays |
 | Layered export to a CapCut draft | capcut-export |
 
 ## Culture rules (apply at every stage)

@@ -24,6 +24,8 @@ every real edit without ever carrying the edit's private details.
   edl-tighten/             # silence/pacing cuts with a full timeline remap
   sound-design/            # ElevenLabs SFX kit + music bed, audit, mixing math
   ai-audio-sound-design/   # AI-actor footage → location ambience, room reverb, bleeps, watermark removal
+  talking-head-image-overlays/  # uncut take + hard-cut overlays on nouns: title plate, inserts
+                           #   above the eyeline, skeleton-UI cards, early CTA banner. No SFX.
   broll-capture/           # real-website screenshots and scroll recordings
   openart-broll/           # generated b-roll / overlays via the OpenArt MCP
   arcads-broll/            # generated b-roll / overlays via the Arcads REST API
@@ -64,6 +66,8 @@ SETUP.md                   # every tool + API with a CHECK and a FIX
 - **One long recording of many hooks** → `hook-splitter`; an approved body plus many hooks →
   `hook-variations`; any batch of more than two files → `naming-convention` before delivery.
 - **AI-actor footage that sounds sterile** → `ai-audio-sound-design` (audio-only pass).
+- **An uncut take carrying stacked image overlays** → `talking-head-image-overlays`. This lane
+  inverts the usual base cut (keeps ~15% of runtime as pauses) and ships no audio assets.
 - B-roll comes from `broll-capture` (real screens) or `openart-broll` / `arcads-broll`
   (generated).
 
