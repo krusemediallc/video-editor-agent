@@ -1,5 +1,17 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-17 — Fourth round on the 3:00 organic edit: two more generic lessons
+
+A range replace between two section comments in a generated composition deleted a third block that
+sat between them; `hyperframes check` passed and the render was clean, the overlay was simply
+absent until the frame sheet was read against the storyboard. video-edit-pipeline Stage 6 now says:
+patch by unique markers, then grep the generated page for every element id the storyboard names,
+and read the sheet for what should be there, not only for defects. Same round: two overlay windows
+150 ms apart let the first one's banner re-show land inside the second — key exits and re-shows
+off the next window's start. reel-recut's long-take traps gained the censor-bleep twin of the
+transcript-drift trap (bleep 350 ms early from the full-file pass; the slice emitted "fuck-ton" as
+one token, so match by prefix).
+
 ## 2026-09-17 — "Glitchy" meant the seams: measure clicks, declick in one graph, cut both streams from one grid
 
 A reviewer's "super glitchy, skips around" on a 116-cut organic reel was neither the render nor the
