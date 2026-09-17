@@ -1,0 +1,4 @@
+interface:
+  display_name: "Recap Video"
+  short_description: "Edit event recaps from takes and matching B-roll"
+  default_prompt: "Use $recap-video to edit these spoken takes and B-roll into a finished event recap."

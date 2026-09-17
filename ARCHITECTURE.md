@@ -18,6 +18,7 @@ every real edit without ever carrying the edit's private details.
   reel-recut/              # spec-driven creator reel: banner, karaoke captions, callouts, silence cuts
   reel-style-clone/        # reference reel → STYLE-GUIDE.md + build directives
   arcads-video-edit/       # multi-take screen+camera+mic demo → EDL base cut → motion-graphics pass
+  recap-video/            # event recap: per-line takes, supplied B-roll, split/full layouts, exact assembly
   hook-splitter/           # one long composite of many hooks → N tightened standalone videos
   hook-variations/         # one body × N hooks → N standalone variants (lossless + AVFoundation-verified)
   naming-convention/       # descriptive filenames for a batch of deliverables
@@ -63,6 +64,10 @@ SETUP.md                   # every tool + API with a CHECK and a FIX
 - **The creator's own signature reel look** → `reel-recut` (one JSON spec, deterministic).
 - **Multi-take screen + camera + mic recordings** → `arcads-video-edit` (EDL base cut the
   reviewer locks, then a motion-graphics pass).
+- **Event/conference/travel recap with spoken takes + supplied B-roll** → `recap-video`
+  (reference forensics, line selection, B-roll catalog, exact base assembly, source-anchored
+  captions/graphics, render/QA and review revisions). Its portable Python assembler writes
+  versioned EDL/word maps; it needs Python and ffmpeg/ffprobe, with no new cloud dependency.
 - **One long recording of many hooks** → `hook-splitter`; an approved body plus many hooks →
   `hook-variations`; any batch of more than two files → `naming-convention` before delivery.
 - **AI-actor footage that sounds sterile** → `ai-audio-sound-design` (audio-only pass).

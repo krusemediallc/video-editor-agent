@@ -20,6 +20,7 @@ footage + (optional) reference reel + brand/site + ratio
       talking head + brand ─────────────→ [1]–[7] below
       creator's own reel look ──────────→ reel-recut
       multi-take screen+camera+mic ─────→ arcads-video-edit
+      event recap: takes + B-roll ──────→ recap-video
       one long file of many hooks ──────→ hook-splitter (→ hook-variations)
       AI-actor footage that sounds fake → ai-audio-sound-design
         │
@@ -117,6 +118,7 @@ HyperFrames, whisper models, or ffmpeg.
 | `reel-recut` | The creator's own short-form look from ONE JSON spec: title banner, karaoke captions, callout boxes, silence-cut pacing; raw-cut mode for footage a client's editor finishes. |
 | `reel-style-clone` | Reverse-engineer a reference reel frame by frame into a STYLE-GUIDE.md + build directives. |
 | `arcads-video-edit` | Multi-take screen + camera + mic recordings → an EDL-driven base cut the reviewer locks, then a HyperFrames motion-graphics pass with takeovers, the base video as a character, captions, SFX and music. |
+| [Recap Video](.claude/skills/recap-video/SKILL.md) | Event/conference/travel recap: choose the best take per line, remove pauses and restarts, match supplied B-roll to narration, mix split/full layouts, verify and revise. Includes a portable base-cut assembler. |
 | `hook-splitter` | One long recording of many hooks/takes → one tightened standalone video per hook, QA'd by re-transcribing the renders, delivered on a gallery canvas with a comment box per video. |
 | `hook-variations` | One approved body × N hooks → N standalone variants, joined losslessly, loudness-matched, verified with AVFoundation (not just ffmpeg). |
 | `naming-convention` | Filenames that carry every axis that varies; verify a subject label before baking it into 40 files. |
@@ -139,7 +141,7 @@ HyperFrames, whisper models, or ffmpeg.
 - Transcription quality tracks your whisper model choice; tiny models miss words that then
   miss captions.
 - The main build assumes single-subject talking-head source footage; multi-shot sources go
-  through `arcads-video-edit` (screen + camera takes) or `hook-splitter` (one long composite)
-  first.
+  through `arcads-video-edit` (screen + camera takes), `recap-video` (spoken takes and
+  event B-roll), or `hook-splitter` (one long composite) first.
 - The QA engine's mid-word-cut test fixture uses macOS `say`; on other platforms that one
   test is skipped.

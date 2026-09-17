@@ -1,5 +1,45 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-16 — Recap Video skill from a completed event edit
+
+**Goal:** Turn the complete production and revision workflow of an event recap
+into a reusable skill in this pack.
+
+**Done:** Added `recap-video` with reference forensics, B-roll cataloging,
+per-line multi-take selection, disfluency-aware editing, split/full composition,
+source-anchored revisions, SDR/HLG handling, measured sound finishing and QA
+adjudication. Added a portable Python assembler with versioned EDLs/word maps,
+explicit veto/raw ranges, exact frame/sample trims and protected outputs. Wired
+the lane into `video-edit-pipeline`, ARCHITECTURE and the README catalog.
+
+**Decisions:** Use final implementation and reviewer corrections ahead of
+superseded reference directives. Treat crop coordinates, colors, music gain and
+montage counts as adaptable settings. Preserve approved substantive copy and
+require actual clearance for restricted slide content. Keep source media,
+private session history and client details outside this public pack.
+
+**Validation:** Skill frontmatter, UI metadata and reference links pass. An
+independent scenario review checked multi-take selection, restricted slides,
+quiet tails, partial repeats and revisions; its approved-ending clarification
+was applied. Assembler synthetic tests pass at 30 fps / 44.1 and 48 kHz, including
+cross-rate resampling, exact frames/PCM samples, rendered reorder pixels, repeated
+source word occurrences, overlap/veto/raw behavior and overwrite refusal. The
+original edit's inputs also pass planning in an isolated temporary project;
+no source media was modified. Independent code review found the existing QA
+adapter's forward-source-order and fixed-geometry assumptions; the skill now
+requires an occurrence-based seam audit for reordered/reused takes and avoids
+the generic chronological pacing helper on recap revisions.
+
+**Failed / why:** The system Python lacked PyYAML for the skill validator; used
+an isolated temporary validation environment. No runtime dependency was added
+to the assembler.
+
+**Current state at a glance:** Recap Video is implemented, validated and linked
+into the pipeline. Repository changes are scoped to this skill and its catalog,
+route and documentation. Remote publication is separate from this local addition.
+**Next:** Use `recap-video` on the next event recap; retain the documented QA
+adapter limitation until per-occurrence boundary support is implemented.
+
 ## 2026-09-16 — New skill: `talking-head-image-overlays`, deconstructed from a reference reel and proven on unrelated footage
 
 A creator-supplied reference reel (82 s, 720x1280) was taken apart by measurement, the style was

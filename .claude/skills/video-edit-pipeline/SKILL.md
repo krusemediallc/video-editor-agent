@@ -8,7 +8,7 @@ description: >
   clip into a finished reel", "do the full edit", "make this look like their
   winning ads", or a revision request on a previously delivered edit. It routes
   every stage to the right specialist skill (reel-style-clone, branded-ad-edit,
-  reel-recut, arcads-video-edit, talking-head-image-overlays, hook-splitter,
+  reel-recut, arcads-video-edit, recap-video, talking-head-image-overlays, hook-splitter,
   sound-design, ai-audio-sound-design,
   video-qa, video-review-canvas, edl-tighten, hook-variations, naming-convention,
   capcut-export) and
@@ -73,6 +73,11 @@ masters, `review/`, `_qa/`.
      silence-cut pacing) → **reel-recut**, then Stages 4–6.
    - **multi-take screen + camera + mic recordings** (a product demo read line by line)
      → **arcads-video-edit** (EDL base cut the reviewer locks, then its graphics pass).
+   - **event/conference/travel recap with spoken takes and supplied B-roll** →
+     **recap-video** (per-line take selection, exact base cuts, matched footage,
+     split/full layouts and revision-safe timing), then Stages 4–6. Its workflow
+     owns the build and sound choices; do not also run branded-ad-edit or require
+     new intermediate approvals when the user requested a finished first cut.
    - **one long recording of many hooks/takes** → **hook-splitter**; an approved body
      that needs many openers → **hook-variations** (Stage 6b).
    - **AI-actor / generated footage that sounds sterile** → **ai-audio-sound-design**
@@ -179,7 +184,9 @@ When the reviewer leaves notes (or the user relays them):
    actually saw, not what you assume they meant.
 3. Fix. For pacing notes ("tighten this", "drags here", "cut the dead air"),
    invoke **edl-tighten** — surgical silence/pacing cuts with a full timeline
-   remap so captions, cards, and SFX stay synced.
+   remap so captions, cards, and SFX stay synced. **Recap exception:** stay in
+   **recap-video** and rebuild its line EDL/assembler and occurrence-aware time map;
+   chronological removed-range helpers cannot preserve reordered or reused takes.
 4. Re-run Stage 4 in full (QA → render → verify) on the new cut.
 5. **Per-note QA table** — before delivering the revision, produce a table:
    one row per reviewer note, with the note, what changed, and the **evidence
@@ -231,6 +238,7 @@ draft opens before telling the user it is ready.
 | Naming a batch of deliverables so the files say what they are | naming-convention |
 | Spec-driven short-form recut style (the creator's own look, or a graphics-free raw cut) | reel-recut |
 | Multi-take screen + camera + mic demo → EDL base cut → motion-graphics pass | arcads-video-edit |
+| Event recap from spoken takes + supplied B-roll, split/full layouts and line-anchored revisions | recap-video |
 | One long recording of many hooks → one tightened video per hook (+ gallery canvas) | hook-splitter |
 | AI-actor footage: ambience, room reverb, bleeps, watermark whine, loudness master | ai-audio-sound-design |
 | Uncut take + hard-cut image overlays on content nouns (title plate, inserts above the eyeline, skeleton-UI cards, early CTA banner) | talking-head-image-overlays |
