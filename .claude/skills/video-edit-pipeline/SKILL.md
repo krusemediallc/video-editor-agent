@@ -196,6 +196,16 @@ When the reviewer leaves notes (or the user relays them):
    delivered file — the reviewer's timeline comments are anchored to it.
 7. **Republish to the same slug** so the review URL stays stable; the canvas
    tracks versions.
+8. **Patch a generated composition by unique block markers, then prove every block is
+   still there.** On one round a range replace between two section comments (`// ---- TK5`
+   … `// ---- TK4`) also deleted a third block that sat between them; `hyperframes check`
+   passed, the render was clean, and a whole overlay (tiles + counter) was simply absent
+   until the frame sheet showed the speaker alone. The checker cannot know what should
+   exist. After any patch, grep the generated page for every element id the storyboard
+   names (`grep -c '"#tk3g"' index.html`) and read the frame sheet against the storyboard,
+   not just for defects. Same round, same lesson: two overlay windows 150 ms apart let the
+   first one's banner re-show land inside the second; key an exit/re-show off the NEXT
+   window's start, not a fixed offset after the current one's end.
 
 Repeat until sign-off. Production edits have taken 4+ rounds; that is normal,
 not failure.

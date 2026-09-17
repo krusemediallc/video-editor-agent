@@ -149,6 +149,11 @@ than the one that made it, and read the surviving transcript end to end as prose
    Then re-transcribe the render and read every seam as prose; a residue that a fresh pass
    hears as a complete word ("test **and** another thing") is a clean join — accept it; a
    residue heard as a fragment is not.
+   A censor bleep has the same trap twice over: placed from the full-file transcript it
+   landed 350 ms early and muted the word BEFORE the swear; and the isolated slice emitted
+   the swear as one token with its neighbour ("fuck-ton"), so an exact-token lookup found
+   nothing. Place the bleep from the slice, match the token by prefix, and listen to the
+   rendered bleep with the words either side of it.
 
 ## Seams click: declick every join, and cut both streams from the same numbers
 
