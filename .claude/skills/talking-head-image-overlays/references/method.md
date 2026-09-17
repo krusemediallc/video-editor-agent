@@ -63,9 +63,26 @@ trying to fix it with tighter overlays.
 
 ## 3. Derive the overlay band FROM THIS FOOTAGE
 
-Run `scripts/measure-face-band.py <base.mp4> <outdir>`. It samples a frame per
-second, segments the head against the background, and reports the cap-top and
-eye-line distributions plus the two floors.
+Run `scripts/measure-face-band.py <base.mp4> <outdir>`. On macOS it compiles
+`face-landmarks.swift` and uses Apple's Vision framework for eye/brow/chin on
+every sampled frame; cap top is found by walking up from the Vision face box
+through contiguous dark pixels. It reports the distributions, a validation
+figure, and the two floors.
+
+**Do not substitute a luminance heuristic for the face detector.** Measured
+failure modes on one ordinary clip, both silent: a dark framed print above the
+subject read as the crown (124 px too high), and a black t-shirt read as the
+face. The script carries a rigid-head invariant — `(eye-cap)/(chin-cap)` must be
+near-constant — and refuses to present floors as trustworthy when its CV exceeds
+8 %. Vision on that clip gave CV 3.4 %; the heuristic gave 9.3 % and 50.5 %.
+
+**Sample densely.** The binding constraint is almost always a sub-second
+transient at record start or stop, when the subject is settling or reaching for
+the camera. On one take a 1 fps grid missed the true highest head by 76 px and
+another pass's 1 fps grid missed the true minimum eye line by 65 px. Default is
+6 fps; use `--fps 0` before committing to a floor for a narrow insert. If the
+binding minimum turns out to be in the first or last second, trimming those
+frames typically buys back 30-90 px of band — check before accepting a short one.
 
 ```
 EYE_FLOOR  = min eye line − 24   # the reference's own (sloppy) behaviour
@@ -85,6 +102,15 @@ b-roll is portrait, so you will.
 **Never copy the reference's y-values.** On one real build the difference
 between a guessed floor and the measured one was 278 px, which was the
 difference between a 163 px sliver and a usable insert.
+
+**Refinement worth taking: floor each insert over its OWN window.** The global
+minimum is safe but expensive, because it is usually set by a record-start
+transient that no insert is anywhere near. Recomputing the minimum over just the
+seconds an insert is on screen buys back real height — on one build the global
+cap floor was 448 while the two narrow inserts' own windows floored at 560 and
+548, worth ~100 px of insert. Use the global floor as the default and the
+per-window floor when an insert is being squeezed; verify the chosen bottom edge
+against the minimum inside that window, not against the whole take.
 
 ## 4. Storyboard against measured word onsets
 

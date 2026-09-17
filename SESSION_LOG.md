@@ -53,6 +53,28 @@ own logged zsh trap (`$M:linear` → `Invalid chars 'inear=true'`) on the way.
 `references/method.md`, `scripts/measure-face-band.py`). `video-edit-pipeline` gained the lane in
 its routing table, its Stage-0 lane list and its description. ARCHITECTURE.md updated.
 
+**Follow-up the same session — the measurement script was wrong and got replaced.** An
+independent pass using Apple's Vision framework on all 1722 frames (not a 1 fps sample)
+validated the eye floor (708.7 vs my 704) but broke the head floor: true min cap top was 452,
+not the 528 a 1 fps luminance grid reported. The delivered render is unaffected — its two narrow
+inserts run 10.0-15.6 s where the cap floors at 560 and 548, so a bottom edge of 520 clears by
+28-40 px, verified per-window — but the RULE as first coded was unsafe on any take whose
+highest-head transient falls inside an insert.
+
+Two attempts to patch the heuristic both failed loudly, which is the useful part: taking the
+first dark row from the top grabbed a framed print on the wall (124 px too high), and anchoring
+on "densest dark row" grabbed a black t-shirt. `scripts/face-landmarks.swift` (Vision, compiled
+on demand) is now the primary measurer, with the luminance path kept only as a gated fallback.
+The gate is a rigid-head invariant: `(eye-cap)/(chin-cap)` must be near-constant for one person,
+so a high CV proves the segmenter measured something that is not a head. Vision scores 3.4 % on
+this footage; the two heuristics scored 9.3 % and 50.5 % and are correctly refused.
+
+**Lessons kept (generic):** (1) a validation invariant that is independent of the thing being
+measured catches silent failure that eyeballing three frames does not; (2) the binding constraint
+in a talking-head take is almost always a sub-second transient at record start or stop, so a 1 fps
+grid is not a measurement; (3) flooring each insert over its own window rather than the whole take
+buys back real height, here ~100 px.
+
 **Lesson kept (generic):** *a style's geometry is two different things.* Card geometry was rigid
 to the pixel across seven instances and transfers verbatim; the image band was never fixed and
 must be re-derived from each subject's own eye line. Copying the second kind is how a clone ends
