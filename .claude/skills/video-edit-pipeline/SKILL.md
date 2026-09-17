@@ -250,6 +250,14 @@ draft opens before telling the user it is ready.
   file shows it, not when the code contains it.
 - Probe media with ffprobe before reasoning about it.
 - One batched snapshot beats twenty single-frame grabs.
+- **Many concurrent `<video>` players break caption gating.** With ~30 small clips playing at
+  once (a "wall of my videos"), the rendered file showed every past caption stacked wherever the
+  players were active, while plain sections were clean; five players rendered correctly. When a
+  beat needs many clips playing together, pre-composite them into ONE video with ffmpeg `xstack`
+  and keep the count labels as DOM text. Frame-tile the RENDER at the dense beats; the check pass
+  does not see this.
+- **Sorting a list of timed blocks invalidates every index into it.** A takeover list sorted by
+  time left two blocks reading `TK[2]`/`TK[3]` — the wrong windows. Look blocks up by id.
 - Show competing options (crops especially) as images, not descriptions.
 - Every reviewer note gets evidence, every version gets a new file, every
   delivery leads with the review URL.

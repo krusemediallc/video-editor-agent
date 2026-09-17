@@ -1,5 +1,18 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-17 — Revision round on the 3:00 organic edit: two generic lessons
+
+Working-repo project; details in that repo's log. Kept here as process:
+
+- **Many concurrent `<video>` players break caption clip-gating in the renderer** — ~30 players
+  stacked every past caption; 5 did not. Pre-composite walls into one video (ffmpeg `xstack`).
+  Added to video-edit-pipeline's culture rules.
+- **Never index a list you have sorted** — takeover blocks read `TK[2]`/`TK[3]` after the list
+  was sorted by time; a grep of the generated timeline (exit scheduled before entrance) caught it
+  before render. Look up by id.
+- Public-profile listing via `yt-dlp --flat-playlist` (dates + view counts, no login) is a reliable
+  source of a creator's own back catalogue when the platform's grid page refuses automation.
+
 ## 2026-09-17 — A 4:18 → 3:00 organic edit exercised reel-recut and broll-capture at length
 
 Working-repo project (the retrospective reel); details and the canvas in that repo's log. Generic
