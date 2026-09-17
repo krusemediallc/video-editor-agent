@@ -149,11 +149,15 @@ than the one that made it, and read the surviving transcript end to end as prose
    Then re-transcribe the render and read every seam as prose; a residue that a fresh pass
    hears as a complete word ("test **and** another thing") is a clean join — accept it; a
    residue heard as a fragment is not.
-   A censor bleep has the same trap twice over: placed from the full-file transcript it
-   landed 350 ms early and muted the word BEFORE the swear; and the isolated slice emitted
-   the swear as one token with its neighbour ("fuck-ton"), so an exact-token lookup found
-   nothing. Place the bleep from the slice, match the token by prefix, and listen to the
-   rendered bleep with the words either side of it.
+   A censor bleep cannot be placed from ANY transcript. The full-file pass put the swear
+   350 ms early (the tone muted the word before it); isolated slices, large-v3, put it
+   100–150 ms early three times out of three and fused it with its neighbour ("fuck-ton").
+   Both rounds failed the reviewer. Place it from the waveform: a 5 ms band-energy map
+   (total, <1 k, 1–3 k, 3–6 k, 6–8 k Hz) shows a vowel as loud low-band frames, a stop
+   closure as a fall to the floor, and a /t/ or /k/ release as a high-band burst — a
+   leading /f/ can be nearly silent. Mute from the end of the previous vowel to the next
+   word's burst (8 ms edges, concat of sample-exact trims, not amix), then prove it on the
+   render: only the tone inside the window, the next burst intact after it.
 
 ## Seams click: declick every join, and cut both streams from the same numbers
 

@@ -1,5 +1,17 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-17 — Fifth round on the 3:00 organic edit: a censor bleep is placed from the waveform, not from any transcript
+
+The bleep lesson written earlier today (place it from an isolated slice) failed the reviewer the
+same way again: whisper large-v3 put the swear 100–150 ms early on the full file and on three
+isolated slices alike, and the leading /f/ was almost silent, so a tone timed from a transcript
+ended on the vowel. A 5 ms band-energy map (total, <1 k, 1–3 k, 3–6 k, 6–8 k) reads the phonemes
+directly — vowel = loud low band, stop closure = fall to the floor, /t/ release = high-band burst —
+and the window runs from the end of the previous vowel to the next word's burst. reel-recut's
+paragraph is rewritten to say so. Also: a shared element's exit tween from one window overran the
+next window's entrance (the takeover backdrop was invisible under the brand wall for a whole round);
+the "key off the next window's start" rule in video-edit-pipeline now names shared elements.
+
 ## 2026-09-17 — Fourth round on the 3:00 organic edit: two more generic lessons
 
 A range replace between two section comments in a generated composition deleted a third block that

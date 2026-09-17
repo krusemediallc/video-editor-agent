@@ -205,7 +205,9 @@ When the reviewer leaves notes (or the user relays them):
    names (`grep -c '"#tk3g"' index.html`) and read the frame sheet against the storyboard,
    not just for defects. Same round, same lesson: two overlay windows 150 ms apart let the
    first one's banner re-show land inside the second; key an exit/re-show off the NEXT
-   window's start, not a fixed offset after the current one's end.
+   window's start, not a fixed offset after the current one's end. That covers every element
+   two windows share (banner, backdrop field, PIP ring): one round shipped the second window
+   on plain black because the first window's field fade-out outran the second's fade-in.
 
 Repeat until sign-off. Production edits have taken 4+ rounds; that is normal,
 not failure.
