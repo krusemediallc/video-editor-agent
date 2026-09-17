@@ -149,3 +149,30 @@ than the one that made it, and read the surviving transcript end to end as prose
    Then re-transcribe the render and read every seam as prose; a residue that a fresh pass
    hears as a complete word ("test **and** another thing") is a clean join — accept it; a
    residue heard as a fragment is not.
+
+## Seams click: declick every join, and cut both streams from the same numbers
+
+Hard butt-joins are audible. On a 180 s cut with 116 seams the sample-to-sample jump at the
+join measured **0.037 full-scale at the median, 0.27 at the worst, 47 of 116 above 0.05** — a pop
+roughly every 1.5 s that the reviewer described as "the entire video is super glitchy" and that a
+whisper pass (which only checks words) never sees. Measure it: dump the render to PCM and take
+`max(|diff(samples)|)` in ±10 ms around each seam.
+
+The fix that works: build the AUDIO in **one ffmpeg filter graph** — one `atrim` + `afade in` +
+`afade out` (10 ms) per keep span, all into a single `concat=v=0:a=1` — then mux onto the video.
+Result on the same 116 seams: **median 0.002, 2 above 0.05.** A graph of ~120 filter chains is
+fine; it is the `select` EXPRESSION parser that has the ~120-term limit, not the graph.
+
+Two ways this goes wrong:
+
+- **Do not encode each segment to its own file and stream-copy-concat them.** Every AAC segment
+  carries encoder priming/padding, so the joined file gained ~50 ms per seam (+6.3 s over 117) —
+  a stall at every cut, worse than the click it was meant to fix.
+- **Do not cut video and audio with different rounding.** The concat demuxer rounds each span to
+  whole frames (and drops a frame at some boundaries); sample-accurate `atrim` does not. Built
+  separately, the two streams drifted 367-412 ms apart over 180 s. Snap every span boundary to
+  the source's ACTUAL frame timestamps (`ffprobe -show_entries frame=pts_time`), cut the video
+  with a frame-exact `select='gte(t,a)*lt(t,b)+...'` (chunk it under the parser limit and
+  `-c copy` concat the chunks; the inclusive `between()` adds a frame at exact boundaries), and
+  trim the audio to `n_frames/30` per span. Verify: per-chunk frame counts equal the planned
+  counts exactly, and the two stream durations match to a frame.

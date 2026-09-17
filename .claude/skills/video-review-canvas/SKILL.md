@@ -152,6 +152,14 @@ GET the store is a round of feedback silently dropped.
 4. Publish with `--slug` to the same URL.
 5. Reply, leading with the link, and say which of the reviewer's notes you addressed.
 
+## Cap the review encode
+
+A CRF-16 master peaks at 16-21 Mbps on motion-heavy beats and can stutter in a phone browser
+even when the file is perfect — which reads to the reviewer as "it skips around". Publish a
+capped copy to the canvas (`-crf 22 -maxrate 6M -bufsize 12M`, faststart) and keep the master for
+posting. Measure per-second bitrate on both before deciding a "glitch" is in the edit:
+`ffprobe -select_streams v:0 -show_entries packet=pts_time,size` summed per second.
+
 ## Gotchas
 
 Each of these cost real time.

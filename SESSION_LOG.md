@@ -1,5 +1,16 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-17 — "Glitchy" meant the seams: measure clicks, declick in one graph, cut both streams from one grid
+
+A reviewer's "super glitchy, skips around" on a 116-cut organic reel was neither the render nor the
+bitrate (both measured first). It was the butt-joins: 47 of 116 seams jumped >0.05 full-scale.
+Whisper-based seam QA cannot hear a click. Fixed by building the audio in one filter graph with
+per-span fades and cutting the video frame-exact against the source's real frame grid; the two
+streams now agree to the sample. Two wrong turns are recorded in reel-recut's new section so they
+are not repeated: per-segment encodes + stream-copy concat (AAC padding stalls every seam), and
+cutting audio and video with different rounding (drift). video-review-canvas gained "cap the
+review encode" (a 21 Mbps peak stutters on a phone even when the file is perfect).
+
 ## 2026-09-17 — Revision round on the 3:00 organic edit: two generic lessons
 
 Working-repo project; details in that repo's log. Kept here as process:
