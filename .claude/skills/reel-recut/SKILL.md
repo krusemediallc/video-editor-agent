@@ -129,3 +129,23 @@ than the one that made it, and read the surviving transcript end to end as prose
   set the user's own values in the spec's `style` block.
 - Don't restyle the speaker or their footage; this skill edits pacing and adds graphics,
   nothing else.
+
+## Long takes: three traps (learned on a 258 s source with 140 cuts)
+
+1. **`build_reel.py` dies past ~120 keep spans.** The single `select='between(...)+...'`
+   expression exceeds ffmpeg's expression parser ("Error while parsing expression … Cannot
+   allocate memory"). The plan and the QA manifest are still written before the render step,
+   so recover by rendering from the manifest with the **concat demuxer**: complement the
+   `kind:"cut"` events into keep spans, write `file/inpoint/outpoint` triples, re-encode. Two
+   sub-traps: `file` paths resolve relative to the list file, and a path with an apostrophe
+   breaks the quoting — symlink the source to a clean path and reference that.
+2. **The manifest's remapped `words` are not a word map.** They silently drop words that sit
+   near a cut edge. Derive the cut-timeline word map from a fresh transcription of the
+   RENDERED cut and anchor graphics on that.
+3. **Manual-cut edges from the full-file transcript are wrong by 0.1-1.0 s.** whisper pads
+   sentence-final words and drifts on long files; cuts landed on "job", ate "them have not",
+   and left "…chat and TikTok" hanging. Derive each edge from an isolated 10-16 s slice of
+   the source around the cut (`ffmpeg -ss A -t D` then transcribe): those times were exact.
+   Then re-transcribe the render and read every seam as prose; a residue that a fresh pass
+   hears as a complete word ("test **and** another thing") is a clean join — accept it; a
+   residue heard as a fragment is not.

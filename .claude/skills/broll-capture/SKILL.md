@@ -101,3 +101,19 @@ The proven fallback: record the user's REAL logged-in browser.
 stills usually display as a **sharp card floating over a blurred blow-up of
 itself**, or inside a browser-chrome frame (see branded-ad-edit
 `references/design.md`).
+
+### More traps (profile captures, 2026-09)
+
+- **A TypeScript runner can poison `page.evaluate`.** tsx/esbuild injects a `__name` helper
+  into any function it serialises; inside the page that helper does not exist and the
+  evaluate throws `__name is not defined`. Pass page scripts as **strings**, not functions.
+- **Some platforms never render their grid for automation** (TikTok: "Something went wrong",
+  survives Refresh clicks and long waits). The profile header still renders — take the still,
+  and carry the scrolling beat with another platform's grid.
+- **A screencast that "worked" can be static.** Instagram's grid lives in an inner scroll
+  container; page-level `scrollTo` no-ops and every frame is identical. Frame-tile every take
+  before using it — the tile is how this was caught.
+- **Check the handle before blaming the tool.** Two 404s were a handle mismatch (the
+  creator's handle differs by a dot between platforms), not blocking.
+- **An authenticated dashboard capture can violate a client rule.** An Ads Manager screenshot
+  shows real account IDs and campaign names; treat it as unusable unless cropped to chrome.

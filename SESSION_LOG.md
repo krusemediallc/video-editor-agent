@@ -1,5 +1,24 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-17 — A 4:18 → 3:00 organic edit exercised reel-recut and broll-capture at length
+
+Working-repo project (the retrospective reel); details and the canvas in that repo's log. Generic
+lessons folded into the skills:
+
+- **reel-recut**: `build_reel.py` cannot render past ~120 keep spans (ffmpeg expression parser
+  limit) — recovered via the concat demuxer from the manifest's cut events. The manifest's
+  remapped words drop edge words; the render's own fresh transcription is the word map. Manual-cut
+  edges must come from isolated source slices, not the full-file pass; six of six edges were wrong
+  from the full file and exact from slices. Each is now a gotcha in the skill.
+- **broll-capture**: tsx's `__name` helper breaks `page.evaluate(fn)` (pass strings); TikTok's
+  grid never renders for automation; Instagram's grid scroll is an inner container (static take);
+  frame-tiling every take caught both.
+- **Composition**: a keep-callouts-apart rule must sort callouts by their word time first — the
+  script order is not the list order ("superpower" precedes "focused"), and an unsorted rule
+  scheduled a callout's exit before its entrance so it never left. Measure chin position through
+  every callout window with face landmarks on the RENDER; v1 clipped the chin on 8 of 14.
+- Follow-up: make `build_reel.py` render via the concat demuxer itself (task chip filed).
+
 ## 2026-09-16 — Recap Video skill from a completed event edit
 
 **Goal:** Turn the complete production and revision workflow of an event recap
