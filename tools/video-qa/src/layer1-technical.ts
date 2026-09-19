@@ -76,10 +76,10 @@ function issue(
   };
 }
 
-function parsePairs(log: string, startRe: RegExp, endRe: RegExp): Array<[number, number]> {
+function parsePairs(log: string, startRe: RegExp, endRe: RegExp, duration: number): Array<[number, number]> {
   const starts = [...log.matchAll(startRe)].map((m) => parseFloat(m[1]));
   const ends = [...log.matchAll(endRe)].map((m) => parseFloat(m[1]));
-  return starts.map((s, i) => [s, ends[i] ?? s] as [number, number]);
+  return starts.map((s, i) => [s, ends[i] ?? duration] as [number, number]);
 }
 
 export async function runTechnicalLayer(
@@ -135,7 +135,7 @@ export async function runTechnicalLayer(
     }
   }
   const exp = manifest.expected ?? {};
-  if (exp.width && exp.height && (vStream.width !== exp.width || vStream.height !== exp.height)) {
+  if ((exp.width != null && vStream.width !== exp.width) || (exp.height != null && vStream.height !== exp.height)) {
     issues.push(
       issue(
         "resolution_mismatch",
@@ -183,7 +183,7 @@ export async function runTechnicalLayer(
   for (const [bs, be] of parsePairs(
     vres.stderr,
     /black_start:\s*([\d.]+)/g,
-    /black_end:\s*([\d.]+)/g
+    /black_end:\s*([\d.]+)/g, duration
   )) {
     if (inRegions(intentional.blackRegions, bs, be)) continue;
     const len = be - bs;
@@ -201,7 +201,7 @@ export async function runTechnicalLayer(
   for (const [fs, fe] of parsePairs(
     vres.stderr,
     /freeze_start:\s*([\d.]+)/g,
-    /freeze_end:\s*([\d.]+)/g
+    /freeze_end:\s*([\d.]+)/g, duration
   )) {
     if (inRegions(intentional.stillRegions, fs, fe, 0.5)) continue;
     issues.push(
@@ -267,7 +267,7 @@ export async function runTechnicalLayer(
     for (const [ss, se] of parsePairs(
       ares.stderr,
       /silence_start:\s*([-\d.]+)/g,
-      /silence_end:\s*([-\d.]+)/g
+      /silence_end:\s*([-\d.]+)/g, duration
     )) {
       const len = se - ss;
       if (len < th.silenceMinSec) continue;

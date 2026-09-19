@@ -29,6 +29,9 @@ __pycache__/
 # machine-specific paths. Filled from MASTER_CONTEXT.template.md; never committed.
 MASTER_CONTEXT.md
 
+# Local publishing state belongs to the working machine, not the public skill pack.
+.herenow/
+
 # video-qa engine scratch (layer cache + generated test fixtures)
 tools/video-qa/.qa-cache/
 tools/video-qa/src/__tests__/fixtures/gen/

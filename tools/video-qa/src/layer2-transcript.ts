@@ -30,7 +30,7 @@ export interface L2Options {
   probeEnabled?: boolean;
 }
 
-const DEFAULTS: Required<L2Options> = {
+export const DEFAULT_L2_OPTIONS: Required<L2Options> = {
   clipToleranceSec: 0.06,
   seamDeadAirSec: 0.7,
   captionSimilarityMin: 0.75,
@@ -134,9 +134,16 @@ async function joinClickStat(video: string, t: number): Promise<number | null> {
 export async function runTranscriptLayer(
   manifest: EditManifest,
   options: L2Options = {},
-  log: (msg: string) => void = () => {}
+  log: (msg: string) => void = () => {},
+  dependencies: Partial<{
+    acquireWords: typeof acquireWords;
+    probeWindow: typeof probeWindow;
+    joinClickStat: typeof joinClickStat;
+    measuredSilenceInWindow: typeof measuredSilenceInWindow;
+  }> = {}
 ): Promise<LayerResult> {
-  const opt = { ...DEFAULTS, ...options };
+  const opt = { ...DEFAULT_L2_OPTIONS, ...options };
+  const deps = { acquireWords, probeWindow, joinClickStat, measuredSilenceInWindow, ...dependencies };
   const issues: QaIssue[] = [];
   let seq = 0;
   const push = (
@@ -155,7 +162,7 @@ export async function runTranscriptLayer(
       severity,
       category,
       eventId,
-      timeWindow: { start, end },
+      timeWindow: { start: Math.max(0, start), end: Math.max(0, end) },
       message,
       objective: true,
       ...extra,
@@ -164,13 +171,22 @@ export async function runTranscriptLayer(
 
   const cuts = manifest.events.filter((e) => e.kind === "cut");
   const dialogueCuts = cuts.filter((e) => e.dialogueCut !== false);
-  const { words, sourceWords, via } = await acquireWords(manifest, log);
+  const { words, sourceWords, via } = await deps.acquireWords(manifest, log);
+
+  const captions = manifest.events.filter((e) => e.kind === "caption" && e.out.end != null).sort((a, b) => a.out.start - b.out.start);
+  for (let i = 0; i < captions.length; i++) {
+    for (let j = i + 1; j < captions.length && captions[j].out.start < captions[i].out.end! - 0.05; j++) {
+      const a = captions[i], b = captions[j];
+      if (a.meta?.allowOverlap || b.meta?.allowOverlap || (a.meta?.track != null && b.meta?.track != null && a.meta.track !== b.meta.track)) continue;
+      push("caption_overlap", "MEDIUM", b.id, b.out.start, Math.min(a.out.end!, b.out.end!), `Captions ${a.id} and ${b.id} overlap on the same or unspecified track.`, { evidence: { events: [a.id, b.id] } });
+    }
+  }
 
   if (!words && !sourceWords) {
     // Degraded: no transcript available at all — the click check still runs.
     log("[qa:L2] degraded: no word timings available (no manifest words, no source, or transcriber unavailable)");
     for (const cut of dialogueCuts) {
-      const diff = await joinClickStat(manifest.video, cut.out.start);
+      const diff = await deps.joinClickStat(manifest.video, cut.out.start);
       if (diff != null && diff > opt.clickMaxDiff) {
         push(
           "splice_click",
@@ -210,19 +226,19 @@ export async function runTranscriptLayer(
   }> = [];
   if (sourceWords) {
     for (const cut of dialogueCuts) {
-      if (!cut.src || cut.src.end == null) continue;
-      const rs = cut.src.start;
-      const re = cut.src.end;
+      const rs = typeof cut.meta?.sourceBefore === "number" ? cut.meta.sourceBefore : cut.src?.start;
+      const re = typeof cut.meta?.sourceAfter === "number" ? cut.meta.sourceAfter : cut.src?.end;
+      if (rs == null || re == null) continue;
       const silenceOrigin = (cut.meta as { origin?: string } | undefined)?.origin === "silence";
       const tol = silenceOrigin ? 0.25 : opt.clipToleranceSec;
       for (const w of sourceWords) {
         // Word runs INTO the removed region: its tail may be cut off.
         if (w.start < rs - 1e-3 && w.end > rs + tol) {
-          clippedSuspects.push({ cutId: cut.id, outT: cut.out.start, word: w, side: "tail", overlap: Math.min(w.end, re) - rs, silenceOrigin });
+          clippedSuspects.push({ cutId: cut.id, outT: cut.out.start, word: w, side: "tail", overlap: w.end - rs, silenceOrigin });
         }
         // Word begins INSIDE the removed region and continues past it: head cut off.
-        if (w.start < re - tol && w.end > re + 1e-3 && w.start > rs - 1e-3) {
-          clippedSuspects.push({ cutId: cut.id, outT: cut.out.start, word: w, side: "head", overlap: re - Math.max(w.start, rs), silenceOrigin });
+        if (w.start < re - tol && w.end > re + 1e-3) {
+          clippedSuspects.push({ cutId: cut.id, outT: cut.out.start, word: w, side: "head", overlap: re - w.start, silenceOrigin });
         }
       }
     }
@@ -249,7 +265,7 @@ export async function runTranscriptLayer(
       // 5.5s window: whisper drops words at the edges of short clips (a 3s
       // window failed to hear an intact word live on the 0814 reel), so give
       // it a full phrase either side of the seam.
-      const probe = await probeWindow(manifest.video, s.outT - 2.75, 5.5);
+      const probe = await deps.probeWindow(manifest.video, s.outT - 2.75, 5.5);
       if (probe) {
         evidence.probeTranscript = probe.map((w) => w.text).join(" ");
         const target = norm(s.word.text);
@@ -287,7 +303,7 @@ export async function runTranscriptLayer(
           params: {
             eventId: s.cutId,
             direction: s.side === "tail" ? "later" : "earlier",
-            ms: fixDelta,
+          ms: Math.min(500, fixDelta),
           },
         },
       }
@@ -318,12 +334,14 @@ export async function runTranscriptLayer(
         !silenceOriginCut &&
         lastB &&
         firstA &&
+        lastB !== firstA &&
         norm(lastB.text).length >= 3 &&
         norm(lastB.text) === norm(firstA.text) &&
         firstA.start - lastB.end < 1.5;
       const isBigramDup =
         before.length >= 2 &&
         after.length >= 2 &&
+        before.every((w) => !after.includes(w)) &&
         norm(before[0].text) === norm(after[0].text) &&
         norm(before[1].text) === norm(after[1].text) &&
         (norm(before[0].text).length >= 3 || norm(before[1].text).length >= 3);
@@ -350,7 +368,7 @@ export async function runTranscriptLayer(
           // Confirm against the meter: only real when the render is actually
           // quiet there — a word-gap over speech-level audio is whisper
           // mistiming, not dead air.
-          const silent = covered ? 0 : await measuredSilenceInWindow(manifest.video, gapStart, gapEnd);
+          const silent = covered ? 0 : await deps.measuredSilenceInWindow(manifest.video, gapStart, gapEnd);
           if (!covered && (silent < 0 || silent >= gap * 0.5)) {
             push(
               "seam_dead_air",
@@ -414,7 +432,7 @@ export async function runTranscriptLayer(
 
   // ---- 5. Butt-splice clicks at every dialogue cut --------------------------
   for (const cut of dialogueCuts) {
-    const diff = await joinClickStat(manifest.video, cut.out.start);
+    const diff = await deps.joinClickStat(manifest.video, cut.out.start);
     if (diff != null && diff > opt.clickMaxDiff) {
       push(
         "splice_click",
@@ -428,7 +446,11 @@ export async function runTranscriptLayer(
     }
   }
 
-  const status =
+  const missingSourceBoundaries = !sourceWords?.length && dialogueCuts.some((c) => c.src != null || typeof c.meta?.sourceBefore === "number");
+  // ASR providers can emit point timestamps. Preserve these valid input anchors,
+  // but do not present boundary QA as complete when their duration is unknown.
+  const pointTimings = [...(words ?? []), ...(sourceWords ?? [])].some((w) => w.end === w.start);
+  const status = missingSourceBoundaries || pointTimings ? "degraded" :
     issues.some((i) => i.severity === "CRITICAL" || i.severity === "HIGH")
       ? "fail"
       : issues.length
@@ -436,7 +458,12 @@ export async function runTranscriptLayer(
         : "pass";
   return {
     status,
+    ...(missingSourceBoundaries || pointTimings ? { reason: [
+      ...(missingSourceBoundaries ? ["Source word timings unavailable; clipped-word boundary checks were not run"] : []),
+      ...(pointTimings ? ["Zero-duration ASR timestamps present; word boundary coverage is incomplete"] : []),
+    ].join(". ") } : {}),
     issues,
+    outputWords: words ?? undefined,
     stats: {
       dialogueCuts: dialogueCuts.length,
       wordsVia: via,

@@ -2,12 +2,104 @@
   "collections": {
     "comments": {
       "fields": {
-        "t":       { "type": "number", "required": true, "minimum": 0, "maximum": 7200 },
-        "text":    { "type": "string", "required": true, "maxLength": 1000, "trim": true },
-        "author":  { "type": "string", "maxLength": 60, "trim": true, "default": "Reviewer" },
-        "version": { "type": "string", "maxLength": 20, "default": "v1" }
+        "t": {
+          "type": "number",
+          "required": true,
+          "minimum": 0,
+          "maximum": 7200
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "maxLength": 1000,
+          "trim": true
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 60,
+          "trim": true,
+          "default": "Reviewer"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 20,
+          "default": "v1"
+        },
+        "frame": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fps": {
+          "type": "number",
+          "minimum": 0.001
+        }
       },
-      "access": { "read": "public", "insert": "public", "update": "owner", "delete": "owner" },
+      "access": {
+        "read": "public",
+        "insert": "public",
+        "update": "owner",
+        "delete": "owner"
+      },
+      "rateLimit": "300/hour/ip"
+    },
+    "reviewEvents": {
+      "fields": {
+        "commentId": {
+          "type": "string",
+          "required": true,
+          "maxLength": 1000
+        },
+        "kind": {
+          "type": "string",
+          "required": true,
+          "maxLength": 20
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 60,
+          "trim": true,
+          "default": "Reviewer"
+        },
+        "status": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 1000,
+          "trim": true
+        },
+        "beforeVersion": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "beforeT": {
+          "type": "number",
+          "minimum": 0
+        },
+        "beforeFrame": {
+          "type": "number",
+          "minimum": 0
+        },
+        "afterVersion": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "afterT": {
+          "type": "number",
+          "minimum": 0
+        },
+        "afterFrame": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "access": {
+        "read": "public",
+        "insert": "public",
+        "update": "owner",
+        "delete": "owner"
+      },
       "rateLimit": "300/hour/ip"
     }
   }

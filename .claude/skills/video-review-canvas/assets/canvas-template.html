@@ -120,22 +120,56 @@
   .note[data-tone="green"]{border-left-color:var(--green)}
   .note[data-tone="amber"]{border-left-color:var(--amber)}
   .note[data-tone="mute"]{border-left-color:#6b7383}
+
+  select,input{font:inherit;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px;max-width:100%}
+  label{font-size:12px;color:var(--muted)}
+  .review-toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .review-toolbar label{display:flex;gap:6px;align-items:center}
+  #storage-note,#sync-note{color:var(--muted);font-size:12px;line-height:1.5;margin:9px 0}
+  #review-error{color:#ff8a9c;white-space:pre-wrap;font-size:13px}
+  .video-pair{display:flex;align-items:flex-start;gap:12px}.video-pair>div{flex:1;min-width:0}.video-pair h2{font-size:14px;margin:0 0 8px}.player.comparing{width:min(100%,760px)}.compare-panel{margin-top:0} .compare-panel[hidden]{display:none}
+  .compare-panel h2{font-size:14px}.video-pair video{max-height:64vh;object-fit:contain}
+  .comment-body{min-width:0;flex:1}.resolved .ctext{color:var(--muted)}
+  .status{color:var(--amber);font-size:11px;font-weight:700}.resolved .status{color:var(--green)}
+  .thread{margin:10px 0;padding-left:10px;border-left:2px solid var(--line)}
+  .thread p{font-size:13px;white-space:pre-wrap;margin:5px 0}
+  .evidence{padding:9px;background:var(--panel2);border-radius:8px;margin-top:8px}
+  .evidence .btn{margin-top:5px}.note-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+  .reply-form textarea{min-height:48px;font-size:13px;margin-top:8px}
+  .evidence-form{display:grid;gap:8px;margin-top:8px}.evidence-form label{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+  .evidence-form input{width:100px} details{font-size:12px;margin-top:10px} summary{cursor:pointer;color:var(--a1)}
+  .pin.resolved{background:var(--green)}.btn:disabled{opacity:.6;cursor:wait}.side{min-width:min(330px,100%)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="eyebrow">{{EYEBROW}}</div>
-    <h1>{{TITLE}} — <em>{{VERSION_LABEL}}</em></h1>
+    <h1>{{TITLE}} — <em id="version-label">{{VERSION_LABEL}}</em></h1>
     <p>{{BLURB}} Pause anywhere and hit <b>Comment at this frame</b> (or press <kbd>C</kbd>) —
       every note pins to that exact timestamp and I pick them all up for the next cut.
       Use <kbd>←</kbd> <kbd>→</kbd> to step one frame.</p>
     <div class="facts">{{FACTS}}</div>
+    <div class="review-toolbar">
+      <label>Version <select id="version-picker" aria-label="Review version"></select></label>
+      <label>Compare <select id="compare-picker" aria-label="Compare version"><option value="">Off</option></select></label>
+      <label>Compare offset (seconds) <input id="compare-offset" type="number" step="0.001" value="0" aria-label="Compare offset"></label>
+      <label>Your name <input id="review-author" maxlength="60" aria-label="Your name"></label>
+      <button class="btn btn-sm" id="export-review">Export review JSON</button>
+    </div>
+    <p id="storage-note"></p><div id="review-error" role="alert"></div>
   </header>
 
   <div class="layout">
     <div class="player">
-      <video id="vid" src="{{VIDEO_FILE}}" playsinline preload="metadata"></video>
+      <div class="video-pair">
+        <div class="primary-panel"><h2 id="primary-label">{{VERSION_LABEL}}</h2><video id="vid" src="{{VIDEO_FILE}}" playsinline preload="metadata"></video></div>
+      <div class="compare-panel" id="compare-panel" hidden>
+        <h2 id="compare-label">Compare</h2>
+        <video id="compare-video" playsinline muted preload="metadata"></video>
+        <p id="sync-note">Comparison follows the main player at the same elapsed time. Adjust the offset for changed cuts; the comparison is muted.</p>
+      </div>
+      </div>
       <div class="timeline" id="tl">
         <div class="track"></div>
         <div class="beatmarks" id="beatmarks"></div>
@@ -149,6 +183,7 @@
         <button class="btn" id="playbtn">▶ Play</button>
         <button class="btn btn-sm" id="fwdbtn" title="one frame forward">|▶</button>
         <button class="btn btn-accent" id="commentbtn">💬 Comment at this frame</button>
+        {{DOWNLOAD_BTN}}
       </div>
       <div class="keyhint">
         <kbd>space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> ±1 frame ·
@@ -169,6 +204,10 @@
       <div class="card">
         <h2>Your notes <span class="cnt" id="ccount"></span></h2>
         <p class="hint">Click a timestamp to jump the player there. Notes save to this page — I read them back before the next cut.</p>
+        <div class="review-toolbar">
+          <label>Status <select id="status-filter"><option value="all">All notes</option><option value="open">Open</option><option value="resolved">Resolved</option></select></label>
+          <label>Versions <select id="notes-version-filter"><option value="all">All versions</option><option value="current">Current version</option></select></label>
+        </div>
         <div id="clist"><div class="empty">No notes yet.</div></div>
       </div>
       {{NOTES_CARD}}
@@ -181,166 +220,7 @@
   </div>
 </div>
 
-<script>
-(function () {
-  var FPS = {{FPS}}, VERSION = "{{VERSION}}", DUR_FALLBACK = {{DURATION}};
-  var BEATS = {{BEATS_JSON}};
-
-  var $ = function (id) { return document.getElementById(id); };
-  var vid = $("vid"), tl = $("tl"), played = $("played"), playhead = $("playhead");
-  var tltime = $("tltime"), tllabel = $("tllabel"), playbtn = $("playbtn");
-  var composer = $("composer"), stampT = $("stamp-t"), ctext = $("ctext"), cerr = $("cerr");
-  var clist = $("clist"), ccount = $("ccount"), beatsEl = $("beats"), beatmarks = $("beatmarks");
-  var comments = [], stampedAt = 0;
-
-  function dur() { return vid.duration && isFinite(vid.duration) ? vid.duration : DUR_FALLBACK; }
-  function fmt(t, tenths) {
-    var m = Math.floor(t / 60), s = t - m * 60;
-    return m + ":" + (s < 10 ? "0" : "") + (tenths ? s.toFixed(1) : Math.floor(s));
-  }
-
-  BEATS.forEach(function (b) {
-    var el = document.createElement("button");
-    el.className = "beat";
-    el.setAttribute("data-tone", b.tone || "");
-    el.innerHTML = '<span class="bt"></span><span class="bd"><span class="bn"></span><span class="bs"></span></span>';
-    el.querySelector(".bt").textContent = fmt(b.t, true);
-    el.querySelector(".bn").textContent = b.n;
-    el.querySelector(".bs").textContent = b.s || "";
-    el.addEventListener("click", function () { vid.currentTime = b.t + 0.05; vid.pause(); });
-    beatsEl.appendChild(el);
-    var mk = document.createElement("i");
-    mk.style.left = (b.t / DUR_FALLBACK * 100).toFixed(2) + "%";
-    beatmarks.appendChild(mk);
-  });
-
-  function currentBeat(t) {
-    var cur = BEATS[0];
-    for (var i = 0; i < BEATS.length; i++) if (t >= BEATS[i].t) cur = BEATS[i];
-    return cur;
-  }
-
-  function tick() {
-    var d = dur(), p = d ? vid.currentTime / d : 0;
-    played.style.width = (p * 100).toFixed(2) + "%";
-    playhead.style.left = (p * 100).toFixed(2) + "%";
-    tltime.textContent = fmt(vid.currentTime, true) + " · f" + Math.round(vid.currentTime * FPS) + " / " + fmt(d, false);
-    if (BEATS.length) {
-      var b = currentBeat(vid.currentTime);
-      tllabel.textContent = b.n;
-      var els = beatsEl.querySelectorAll(".beat");
-      for (var i = 0; i < els.length; i++) els[i].classList.toggle("on", BEATS[i] === b);
-    }
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-
-  vid.addEventListener("play", function () { playbtn.textContent = "⏸ Pause"; });
-  vid.addEventListener("pause", function () { playbtn.textContent = "▶ Play"; });
-  playbtn.addEventListener("click", function () { vid.paused ? vid.play() : vid.pause(); });
-  vid.addEventListener("click", function () { vid.paused ? vid.play() : vid.pause(); });
-
-  function step(frames) {
-    vid.pause();
-    vid.currentTime = Math.max(0, Math.min(dur() - 1 / FPS, vid.currentTime + frames / FPS));
-  }
-  $("backbtn").addEventListener("click", function () { step(-1); });
-  $("fwdbtn").addEventListener("click", function () { step(1); });
-
-  tl.addEventListener("click", function (e) {
-    if (e.target.classList.contains("pin")) return;
-    var r = tl.getBoundingClientRect();
-    vid.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * dur();
-  });
-
-  function openComposer() {
-    vid.pause();
-    stampedAt = Math.round(vid.currentTime * 10) / 10;
-    stampT.textContent = fmt(stampedAt, true) + " · f" + Math.round(stampedAt * FPS);
-    composer.classList.add("open");
-    cerr.style.display = "none";
-    ctext.focus();
-  }
-  $("commentbtn").addEventListener("click", openComposer);
-  document.addEventListener("keydown", function (e) {
-    if (e.target === ctext) return;
-    if (e.key === "c" || e.key === "C") { e.preventDefault(); openComposer(); }
-    if (e.key === " ") { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
-    if (e.key === "ArrowLeft") { e.preventDefault(); step(e.shiftKey ? -FPS : -1); }
-    if (e.key === "ArrowRight") { e.preventDefault(); step(e.shiftKey ? FPS : 1); }
-  });
-  $("cancelbtn").addEventListener("click", function () {
-    composer.classList.remove("open"); ctext.value = "";
-  });
-
-  $("sendbtn").addEventListener("click", function () {
-    var text = ctext.value.trim();
-    if (!text) { ctext.focus(); return; }
-    var btn = this;
-    btn.disabled = true; btn.textContent = "Posting…";
-    fetch("./.herenow/data/comments", {
-      method: "POST",
-      headers: { "content-type": "application/json",
-                 "Idempotency-Key": (crypto.randomUUID ? crypto.randomUUID() : String(Math.random())) },
-      body: JSON.stringify({ t: stampedAt, text: text, author: "{{AUTHOR}}", version: VERSION })
-    }).then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { throw new Error(j.message || ("HTTP " + r.status)); });
-      return r.json();
-    }).then(function () {
-      ctext.value = ""; composer.classList.remove("open"); loadComments();
-    }).catch(function (e) {
-      cerr.textContent = "Couldn't post: " + e.message; cerr.style.display = "block";
-    }).finally(function () {
-      btn.disabled = false; btn.textContent = "Post note";
-    });
-  });
-
-  function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-
-  function renderComments() {
-    comments.sort(function (a, b) { return a.data.t - b.data.t; });
-    ccount.textContent = comments.length ? comments.length + (comments.length === 1 ? " note" : " notes") : "";
-    var pins = tl.querySelectorAll(".pin");
-    for (var i = 0; i < pins.length; i++) pins[i].remove();
-    comments.forEach(function (c, i) {
-      var pin = document.createElement("div");
-      pin.className = "pin";
-      pin.style.left = (c.data.t / dur() * 100).toFixed(2) + "%";
-      pin.textContent = i + 1;
-      pin.title = fmt(c.data.t, true) + " — " + c.data.text.slice(0, 90);
-      pin.addEventListener("click", function () { vid.currentTime = c.data.t; vid.pause(); });
-      tl.appendChild(pin);
-    });
-    if (!comments.length) { clist.innerHTML = '<div class="empty">No notes yet.</div>'; return; }
-    clist.innerHTML = comments.map(function (c, i) {
-      var when = new Date(c.createdAt);
-      return '<div class="comment">' +
-        '<div class="tchip" data-t="' + c.data.t + '">#' + (i + 1) + " · " + fmt(c.data.t, true) + "</div>" +
-        '<div><div class="ctext">' + esc(c.data.text) + "</div>" +
-        '<div class="cmeta">' + esc(c.data.author || "") + " · " + when.toLocaleString() + "</div></div></div>";
-    }).join("");
-    var chips = clist.querySelectorAll(".tchip");
-    for (var j = 0; j < chips.length; j++) {
-      chips[j].addEventListener("click", function () {
-        vid.currentTime = parseFloat(this.dataset.t); vid.pause();
-      });
-    }
-  }
-
-  function loadComments() {
-    fetch("./.herenow/data/comments?limit=200")
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        // Filter by version: records can't be deleted, so old rounds stay in the store forever.
-        comments = (j.records || []).filter(function (r) { return r.data.version === VERSION; });
-        renderComments();
-      })
-      .catch(function () {});
-  }
-  vid.addEventListener("loadedmetadata", renderComments);
-  loadComments();
-  setInterval(loadComments, 30000);
-})();
-</script>
+<script id="review-config" type="application/json">{{CONFIG_JSON}}</script>
+<script type="module" src="./review-app.mjs"></script>
 </body>
 </html>

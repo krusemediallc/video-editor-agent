@@ -49,6 +49,14 @@ npm --prefix tools/video-qa run qa:video -- --video <p>/out.mp4
 
 # a Layer-4 inspection packet for one window
 npm --prefix tools/video-qa run qa:inspect -- --manifest <p>/spec.qa-manifest.json --start 31.5 --end 33.0
+
+# check every planned graphic, then collect actual-render evidence
+npm --prefix tools/video-qa run qa:storyboard -- --storyboard <p>/storyboard.json \
+    --html <p>/composition.html --video <p>/out.mp4
+
+# enforce completed technical + transcript checks before delivery
+npm --prefix tools/video-qa run qa:video -- --manifest <p>/spec.qa-manifest.json \
+    --require-layers technical,transcript
 ```
 
 Flags: `--skip-semantic` (no Gemini), `--fps N`, `--instructions file.txt` (the original
@@ -57,6 +65,35 @@ PASS_WITH_WARNINGS · **2** FAIL. Reports land in `<video dir>/_qa/<stem>/qa-rep
 with packets under `inspect/<issue-id>/`. Relative paths resolve from the directory you ran
 the command in; `.env` is read from there first, then from this pack's root. Full flag and
 environment reference: `tools/video-qa/README.md`.
+
+Coverage is explicit in the JSON/Markdown report. Missing or degraded optional layers
+produce PASS_WITH_WARNINGS; unavailable required layers produce FAIL. Technical is required
+by default. `--skip-semantic` is supported and its unavailable coverage is shown. Layer
+failures preserve the completed layers in a partial report. Cache fingerprints include
+effective instructions, semantic FPS, thresholds, transcript configuration and source-file
+identity; degraded/skipped layers are retried, not cached.
+
+## Storyboard completeness
+
+Save `storyboard.json` from the accepted plan before authoring HTML:
+
+```json
+{"version":1,"elements":[{"id":"proof-card","start":4,"end":8},{"id":"cta","selector":"#closing-cta","start":12,"end":15}]}
+```
+
+Each `id` is stable and unique. `selector` is optional and supports a single HTML `#id`;
+it defaults to the storyboard ID. Targets or their timed ancestors use absolute output-time
+`data-start` plus `data-duration` or `data-end`. The checker reports omitted/duplicate IDs,
+missing schedules, zero/reversed windows, and schedules that do not cover their planned
+windows. The JSON schema is `tools/video-qa/schemas/storyboard.schema.json`.
+
+Run once against HTML before rendering and again with `--video` afterward. The latter
+extracts three frames from the actual MP4 for every planned element (10%, 50%, 90% of its
+window), writes indexed contact sheets and records the render hash and timestamps. Read
+the samples for what should be present. A static schedule pass **does not prove rendered
+visibility**: JS/GSAP, CSS/occlusion, external HTML, and nested composition offsets are not
+evaluated. The report keeps `renderedVisibility: "not_verified"`; visually review the real
+samples before saying a graphic appears. A missing/unreadable evidence window fails the CLI.
 
 When the engine cannot run (no node, a lane it has no adapter for), do the layers by hand:
 
@@ -107,7 +144,8 @@ Work in a scratch dir next to the video: `<video dir>/_qa/<video stem>/`.
    audio intact, upload to Gemini, get schema-enforced JSON. Skip cleanly if no key. Its
    timestamps are ±2s — its job is to tell you WHERE to look, never to be trusted blindly.
 4. **Aggregate.** Merge issues; a semantic finding overlapping a deterministic finding
-   (same event anchor, or time windows within 1s) is **corroborated** — raise confidence on
+   (compatible defect categories plus the same event anchor, or overlapping time windows
+   within 1s) is **corroborated** — raise confidence on
    both. Gemini-only issues never exceed HIGH.
 5. **L4 — inspect before you touch anything.** For every CRITICAL/HIGH issue (top ~4),
    build an inspection packet per
@@ -136,7 +174,9 @@ reliably whether something was actually fixed.
   unconfirmed suspicions). Never blocks; never auto-"fix".
 
 Verdict: any CRITICAL/HIGH → **FAIL** · any MEDIUM → **PASS_WITH_WARNINGS** · else
-**PASS**. If you expose this as a script, use exit codes 0 / 1 / 2 in that order.
+**PASS** when all layers completed. Unavailable optional coverage → **PASS_WITH_WARNINGS**;
+unavailable required coverage → **FAIL**. Use exit codes 0 / 1 / 2 in that order. Never call
+partial checks a clean pass.
 
 ## Fix loop + auto-fix whitelist
 
@@ -174,6 +214,12 @@ rounds**, then stop and escalate. Never loop on LOW or subjective issues.
   report — never a crash.
 
 ## Dependencies
+
+Offline regression suite: `npm --prefix tools/video-qa test`; typecheck:
+`npm --prefix tools/video-qa run typecheck`. The default tests use fixed seam probes and
+generated local media, including the production cut assembler's 128-span render. They do
+not call an inference API, install a model, or use TTS. Live macOS TTS/transcriber integration
+is a separate opt-in: `npm --prefix tools/video-qa run test:live`.
 
 - **node >= 20** + `npm --prefix tools/video-qa install` for the engine (tsx, zod, dotenv).
 - **ffmpeg / ffprobe** on PATH (or `FFMPEG_PATH` / `FFPROBE_PATH` env vars; the engine also

@@ -7,7 +7,7 @@
  */
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { LayerResult, QaIssue, QaReport, Severity, Verdict } from "./types";
+import type { LayerResult, QaIssue, QaReport, Severity, Verdict, QaLayerName } from "./types";
 import { QA_PROMPT_VERSION } from "./types";
 
 const SEV_ORDER: Severity[] = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
@@ -20,6 +20,13 @@ function overlaps(a: QaIssue, b: QaIssue, slack = 1.0): boolean {
   );
 }
 
+const RELATED: Record<string, string[]> = {
+  clipped_dialogue: ["clipped_word"], duplicate_footage: ["repeated_word"],
+  audio_glitch: ["splice_click", "clipping_risk", "waveform_flatline", "audio_decode_error"],
+  dead_air: ["dead_air", "seam_dead_air"], caption_error: ["caption_mismatch", "caption_orphaned", "caption_overlap"],
+  visual_glitch: ["black_frames", "frozen_frames", "flash_frame", "decode_error", "decode_warnings"],
+};
+
 export function aggregate(args: {
   video: string;
   videoSha256: string;
@@ -30,6 +37,7 @@ export function aggregate(args: {
   technical: LayerResult;
   transcript: LayerResult;
   semantic: LayerResult;
+  requiredLayers?: QaLayerName[];
 }): QaReport {
   const { technical, transcript, semantic } = args;
   const deterministic = [...technical.issues, ...transcript.issues];
@@ -38,7 +46,7 @@ export function aggregate(args: {
   // confidence on both. Gemini-only issues stay ≤ HIGH.
   for (const sIssue of semantic.issues) {
     for (const dIssue of deterministic) {
-      if (overlaps(sIssue, dIssue)) {
+      if ((sIssue.category === dIssue.category || RELATED[sIssue.category]?.includes(dIssue.category)) && overlaps(sIssue, dIssue)) {
         sIssue.corroborated = true;
         dIssue.corroborated = true;
       }
@@ -54,9 +62,17 @@ export function aggregate(args: {
   const summary: Record<Severity, number> = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
   for (const i of issues) summary[i.severity] += 1;
 
+  const layers = { technical, transcript, semantic };
+  const names: QaLayerName[] = ["technical", "transcript", "semantic"];
+  const completed = names.filter((n) => !["degraded", "skipped"].includes(layers[n].status));
+  const unavailable = names.filter((n) => !completed.includes(n));
+  const required = args.requiredLayers ?? ["technical"];
+  const missingRequired = required.filter((n) => unavailable.includes(n));
+  const coverage = { complete: unavailable.length === 0, completed, unavailable, required, missingRequired };
+
   let verdict: Verdict = "PASS";
-  if (summary.CRITICAL > 0 || summary.HIGH > 0) verdict = "FAIL";
-  else if (summary.MEDIUM > 0) verdict = "PASS_WITH_WARNINGS";
+  if (summary.CRITICAL > 0 || summary.HIGH > 0 || missingRequired.length) verdict = "FAIL";
+  else if (summary.MEDIUM > 0 || unavailable.length) verdict = "PASS_WITH_WARNINGS";
   // LOW-only never blocks (spec: do not auto-reject on LOW).
 
   return {
@@ -69,6 +85,7 @@ export function aggregate(args: {
     generatedAt: new Date().toISOString(),
     iteration: args.iteration,
     verdict,
+    coverage,
     layers: { technical, transcript, semantic },
     issues,
     summary,
@@ -90,10 +107,12 @@ export function renderMarkdown(report: QaReport): string {
     layerLine("Semantic (Gemini)", l.semantic),
     ``,
     `Severity: ${report.summary.CRITICAL} critical · ${report.summary.HIGH} high · ${report.summary.MEDIUM} medium · ${report.summary.LOW} low`,
+    `Coverage: **${report.coverage.complete ? "complete" : "partial"}** — completed: ${report.coverage.completed.join(", ") || "none"}; unavailable: ${report.coverage.unavailable.join(", ") || "none"}.`,
+    ...(report.coverage.missingRequired.length ? [`Required checks unavailable: **${report.coverage.missingRequired.join(", ")}**.`] : []),
     ``,
   ];
   if (!report.issues.length) {
-    lines.push(`No issues found. Clean pass.`);
+    lines.push(report.coverage.complete ? `No issues found in completed checks.` : `No issues found in completed checks. Unavailable checks are not evidence of a clean render.`);
   } else {
     lines.push(`## Issues`, ``);
     for (const i of report.issues) {

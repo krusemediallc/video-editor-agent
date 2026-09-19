@@ -32,7 +32,10 @@ export interface MidwordFixture {
 export async function makeFixtures(): Promise<void> {
   mkdirSync(GEN_DIR, { recursive: true });
   const done = join(GEN_DIR, ".done");
-  if (existsSync(done)) return;
+  if (existsSync(done)) {
+    await maybeMakeMidwordFixture();
+    return;
+  }
 
   // 1. clean: 8s test pattern + gentle tone at sane levels
   await gen([
@@ -88,14 +91,20 @@ export async function makeFixtures(): Promise<void> {
     join(GEN_DIR, "flash.mp4"),
   ]);
 
-  // 6. mid-word cut (macOS say TTS; skipped silently on non-darwin)
+  await maybeMakeMidwordFixture();
+
+  await writeFile(done, new Date().toISOString());
+}
+
+async function maybeMakeMidwordFixture(): Promise<void> {
+  if (process.env.VIDEO_QA_LIVE_TESTS !== "1" || existsSync(join(GEN_DIR, "midword.json"))) return;
+  // Explicitly opted-in integration only. Default test runs never invoke TTS/ASR.
   try {
     await makeMidwordFixture();
   } catch (e) {
     console.warn(`midword fixture skipped: ${(e as Error).message.slice(0, 200)}`);
   }
 
-  await writeFile(done, new Date().toISOString());
 }
 
 async function makeMidwordFixture(): Promise<void> {

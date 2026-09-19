@@ -70,6 +70,13 @@ describe("layer 1 — technical", () => {
   it("detects frozen frames", async () => {
     const r = await runTechnicalLayer(baseManifest(join(GEN_DIR, "freeze.mp4")), {}, quiet);
     assert.ok(r.issues.some((i) => i.category === "frozen_frames"), JSON.stringify(r.issues));
+    const freeze = r.issues.find((i) => i.category === "frozen_frames")!;
+    assert.ok(freeze.timeWindow.end - freeze.timeWindow.start > 2, "A freeze continuing to EOF must have its measured duration");
+  });
+
+  it("detects the generated flash at an edit seam", async () => {
+    const r = await runTechnicalLayer(baseManifest(join(GEN_DIR, "flash.mp4"), { events: [{ id: "cut:2", kind: "cut", out: { start: 2 } }] }), {}, quiet);
+    assert.ok(r.issues.some((i) => i.category === "flash_frame" && i.severity === "HIGH"), JSON.stringify(r.issues));
   });
 
   it("detects duration mismatch from the FILE", async () => {
@@ -155,7 +162,7 @@ describe("report aggregation + anchoring", () => {
         iteration: 1,
         technical: { status: "warn", issues },
         transcript: empty,
-        semantic: { status: "skipped", reason: "test", issues: [] },
+        semantic: empty,
       });
     assert.equal(mk([mkIssue({})]).verdict, "FAIL");
     assert.equal(mk([mkIssue({ severity: "MEDIUM" })]).verdict, "PASS_WITH_WARNINGS");
@@ -213,6 +220,10 @@ describe("layer 3 — graceful degradation", () => {
 describe("layer 2 — mid-word cut (TTS fixture)", () => {
   it("flags the clipped word on a manual cut", { timeout: 300_000 }, async (t) => {
     const fixturePath = join(GEN_DIR, "midword.json");
+    if (process.env.VIDEO_QA_LIVE_TESTS !== "1") {
+      t.skip("live transcription integration is opt-in via npm run test:live");
+      return;
+    }
     if (!existsSync(fixturePath)) {
       t.skip("midword fixture unavailable (no TTS/transcriber on this machine)");
       return;

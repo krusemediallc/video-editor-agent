@@ -11,21 +11,23 @@
  */
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import type { EditManifest, LayerResult, QaReport } from "./types";
+import type { EditManifest, LayerResult, QaReport, QaLayerName } from "./types";
 import { sha256File, sha256Text } from "./ffmpeg";
-import { runTechnicalLayer } from "./layer1-technical";
-import { runTranscriptLayer } from "./layer2-transcript";
+import { runTechnicalLayer, DEFAULT_THRESHOLDS, type Thresholds } from "./layer1-technical";
+import { runTranscriptLayer, DEFAULT_L2_OPTIONS, type L2Options } from "./layer2-transcript";
 import { runSemanticLayer } from "./layer3-semantic";
 import { inspectWindow } from "./inspect";
 import { aggregate, writeReport } from "./report";
 import { cacheGet, cacheKey, cachePut } from "./cache";
 import { geminiModel } from "./gemini";
+import { editManifestSchema } from "./manifest/schema";
 
 export type { EditManifest, QaReport, QaIssue } from "./types";
 export { loadManifest } from "./manifest/schema";
 export { buildHyperframesManifest } from "./manifest/adapter-hyperframes";
 export { inspectWindow } from "./inspect";
 export { exitCode } from "./report";
+export { validateStoryboard, runStoryboardQa, storyboardSchema } from "./storyboard";
 
 export interface RunQaOptions {
   manifest: EditManifest;
@@ -38,6 +40,15 @@ export interface RunQaOptions {
   outDir?: string;
   noCache?: boolean;
   log?: (msg: string) => void;
+  requiredLayers?: QaLayerName[];
+  technicalThresholds?: Partial<Thresholds>;
+  transcriptOptions?: L2Options;
+  /** Dependency injection for offline regression tests and alternate backends. */
+  runners?: Partial<{
+    technical: typeof runTechnicalLayer;
+    transcript: typeof runTranscriptLayer;
+    semantic: typeof runSemanticLayer;
+  }>;
 }
 
 function maxIterations(): number {
@@ -50,7 +61,7 @@ function inspectPadding(): number {
 
 export async function runQa(opts: RunQaOptions): Promise<{ report: QaReport; outDir: string }> {
   const log = opts.log ?? ((m: string) => console.log(m));
-  const manifest = opts.manifest;
+  const manifest = editManifestSchema.parse(opts.manifest) as EditManifest;
   const video = manifest.video;
   if (!existsSync(video)) {
     throw new Error(`Rendered video not found: ${video}`);
@@ -62,6 +73,7 @@ export async function runQa(opts: RunQaOptions): Promise<{ report: QaReport; out
 
   const videoSha = await sha256File(video);
   const manifestSha = sha256Text(JSON.stringify(manifest));
+  const sourceSha = manifest.source && existsSync(manifest.source) ? await sha256File(manifest.source) : null;
 
   // Iteration counter persists across fix→rerender→re-QA rounds in this dir.
   let iteration = 1;
@@ -83,26 +95,42 @@ export async function runQa(opts: RunQaOptions): Promise<{ report: QaReport; out
   const runLayer = async (
     layer: string,
     model: string | undefined,
-    fn: () => Promise<LayerResult>
+    fn: () => Promise<LayerResult>,
+    config: unknown
   ): Promise<LayerResult> => {
-    const key = cacheKey({ videoSha, manifestSha, layer, model });
+    const key = cacheKey({ videoSha, manifestSha, layer, model, config });
     if (!opts.noCache) {
+      try {
       const hit = cacheGet(key);
-      if (hit) {
+      if (hit && hit.status !== "degraded" && hit.status !== "skipped") {
         log(`[qa:${layer}] cache hit — unchanged video+manifest`);
         return hit;
       }
+      } catch (e) { log(`[qa:${layer}] cache unavailable: ${(e as Error).message}`); }
     }
-    const result = await fn();
-    if (result.status !== "skipped") await cachePut(key, result);
-    return result;
+    try {
+      const result = await fn();
+      if (!opts.noCache && result.status !== "skipped" && result.status !== "degraded") {
+        try { await cachePut(key, result); }
+        catch (e) { log(`[qa:${layer}] could not cache completed checks: ${(e as Error).message}`); }
+      }
+      return result;
+    } catch (e) {
+      const reason = `${layer} failed: ${(e as Error).message}`;
+      log(`[qa] ${reason}`);
+      return { status: "degraded", reason, issues: [] };
+    }
   };
 
   log(`[qa] Technical analysis (video+audio) started`);
-  const technical = await runLayer("L1", undefined, () => runTechnicalLayer(manifest, {}, log));
+  const technical = await runLayer("L1", undefined, () => (opts.runners?.technical ?? runTechnicalLayer)(manifest, opts.technicalThresholds, log),
+    { thresholds: { ...DEFAULT_THRESHOLDS, ...opts.technicalThresholds }, ffmpeg: process.env.FFMPEG_PATH, ffprobe: process.env.FFPROBE_PATH });
   log(`[qa] Technical analysis ${technical.status} (${technical.issues.length} issues)`);
 
-  const transcript = await runLayer("L2", undefined, () => runTranscriptLayer(manifest, {}, log));
+  const transcript: LayerResult = technical.issues.some((i) => ["corrupt_file", "missing_video_stream"].includes(i.category))
+    ? { status: "skipped" as const, reason: "Video could not be read", issues: [] }
+    : await runLayer("L2", undefined, () => (opts.runners?.transcript ?? runTranscriptLayer)(manifest, opts.transcriptOptions, log),
+      { sourceSha, options: { ...DEFAULT_L2_OPTIONS, ...opts.transcriptOptions }, backend: process.env.VIDEO_QA_TRANSCRIBER ?? "auto", cloudAvailable: Boolean(process.env.OPENAI_API_KEY) });
   log(
     `[qa] Transcript boundary check ${transcript.status}: ${(transcript.stats?.dialogueCuts as number) ?? 0} dialogue cuts analyzed, ${transcript.issues.length} issues`
   );
@@ -111,8 +139,12 @@ export async function runQa(opts: RunQaOptions): Promise<{ report: QaReport; out
   if (opts.skipSemantic) {
     semantic = { status: "skipped", reason: "--skip-semantic", issues: [] };
   } else {
-    semantic = await runLayer("L3", geminiModel(), () =>
-      runSemanticLayer(manifest, { instructions: opts.instructions, fps: opts.geminiFps, log })
+    const fps = opts.geminiFps ?? (process.env.VIDEO_QA_GEMINI_FPS ? Number(process.env.VIDEO_QA_GEMINI_FPS) : Number(technical.stats?.duration ?? manifest.expectedDuration ?? 0) < 180 ? 5 : 1);
+    semantic = await runLayer("L3", geminiModel(), () => {
+      if (!Number.isFinite(fps) || fps <= 0) throw new Error("Semantic FPS must be a positive finite number");
+      return (opts.runners?.semantic ?? runSemanticLayer)(manifest, { instructions: opts.instructions, fps, log });
+    },
+      { instructions: opts.instructions ?? "", fps, available: Boolean(process.env.GEMINI_API_KEY) }
     );
   }
 
@@ -126,6 +158,7 @@ export async function runQa(opts: RunQaOptions): Promise<{ report: QaReport; out
     technical,
     transcript,
     semantic,
+    requiredLayers: opts.requiredLayers,
   });
 
   // Layer 4: auto-inspect the top issues so the packet is ready for review.
@@ -140,7 +173,7 @@ export async function runQa(opts: RunQaOptions): Promise<{ report: QaReport; out
     );
     try {
       await inspectWindow(
-        manifest,
+        { ...manifest, words: transcript.outputWords ?? manifest.words },
         issue.timeWindow.start - pad,
         issue.timeWindow.end + pad,
         dir,

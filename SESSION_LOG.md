@@ -387,3 +387,57 @@ shapes. Same cuts, regenerated manifest: 0 issues on 22 cuts, both looks.
 7. AI-actor audio arrived at −27 LUFS on one look and −16 on the other; normalise the base to
    −14 LUFS before the comp so one SFX gain table serves both, then limiter-master the render
    (`-c:v copy`) and re-measure — the SFX sum pushed the raw render to −0.1 dBTP.
+
+## 2026-09-18 — Repository improvement audit
+
+Reviewed the pipeline, setup, review canvas, recent production lessons, and QA engine
+to recommend additions; no implementation changes were requested. Highest-value candidates:
+review-note resolution with version comparisons and rendered evidence; storyboard coverage
+validation; offline regression fixtures for real editing failures; resumable project state;
+a reusable footage catalog; and a one-command setup/demo path. QA follow-ups include
+configuration-sensitive cache keys and explicit reporting of incomplete layer coverage.
+The long-cut renderer limitation and recap per-occurrence seam checks remain open concerns.
+
+Validation: the existing QA engine TypeScript check passes. Full media tests, generation,
+publishing, and external API calls were not run. Existing review-canvas edits were preserved;
+this audit only appends this log entry. Architecture is unchanged.
+
+## 2026-09-18 — Implemented the six repository improvements
+
+Added a versioned review canvas with replies, resolution history, paired rendered
+evidence and synchronized comparison; retained existing download support and
+append-only shared notes, plus an explicitly local offline mode. Added storyboard
+ID/timing coverage with actual MP4 samples, a resumable project ledger with hashed
+artifacts and immutable render approvals, and a searchable local footage catalog
+with transcripts, tags, restrictions, usage history and contact sheets.
+
+Added idempotent setup, an offline synthetic demo, a seek-capable local review
+server, a unified regression runner and CI. Hardened QA cache identity, partial
+coverage reporting, reordered/reused EDL boundaries, caption overlap detection and
+fresh frame evidence. Replaced the long-cut render graph with bounded batches,
+exact frame/sample accounting and a single final AAC encode. Updated pipeline,
+recut, recap, QA and review skills, setup instructions and architecture.
+
+Validation: 85 tests passed, with one live transcription test explicitly skipped;
+TypeScript and recap media smoke checks passed. Real renders exercised 128 spans,
+single-frame rational-FPS cuts and both recap sample rates. A fresh-copy setup/demo
+and idempotent rerun passed. Browser inspection verified frame-aligned before/after
+comparison and note persistence after reload. Storyboard samples are evidence for
+human inspection, not an automatic claim that CSS/GSAP content is visibly rendered.
+Live hosted review storage and external AI services were not exercised; nothing
+was published, committed or pushed. Existing workspace edits were preserved.
+
+Lessons: static HTTP servers need byte-range support for reliable video seeking;
+failed frame extraction must never reuse an earlier PNG; and one-frame concat
+segments need explicit frame-derived timestamps to preserve exact duration.
+
+## 2026-09-18 — GitHub publication authorized
+
+User requested committing and pushing the completed repository improvements to
+`origin/main`. Refreshed the remote and confirmed the branch has no incoming
+commits; publication also includes eleven previously unpushed local commits.
+Retained the successful 85-test integration result, TypeScript/media checks and
+five skill validations. Rechecked whitespace and public-repository hygiene before
+committing. Media, credentials, local review storage and personal configuration
+remain ignored. No architecture or implementation changes were needed for this
+publication step.

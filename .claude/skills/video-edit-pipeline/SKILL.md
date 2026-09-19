@@ -4,7 +4,7 @@ description: >
   MASTER orchestration skill for producing a finished short-form video from raw
   talking-head footage. Use for ANY request to edit, produce, recut, or "make an
   ad/reel out of" talking-head footage — with or without a style reference —
-  including "edit this video", "edit this like <reference reel>", "turn this
+  including "edit this video", "edit this like the reference reel", "turn this
   clip into a finished reel", "do the full edit", "make this look like their
   winning ads", or a revision request on a previously delivered edit. It routes
   every stage to the right specialist skill (reel-style-clone, branded-ad-edit,
@@ -47,6 +47,11 @@ explicitly says so (e.g. "no sound design", "just render, no review page").
 
 ## Stage 0 — Intake
 
+For an existing media project with `project.json`, run
+`python3 <pack>/tools/editor/editor.py project resume <project>` first. It reports source
+changes, the next stage, the current render and outstanding review notes. Reuse those decisions
+instead of repeating intake. The command is read-only unless `--run` is explicitly added.
+
 Collect before anything else:
 
 1. **Footage** — path(s) to the raw file(s). Expect them in the **projects
@@ -66,6 +71,15 @@ Create a working directory per project under the projects directory
 (`<projects dir>/<project-slug>/`; default `outputs/<project-slug>/` here) and keep
 every intermediate there: source copy, transcripts, spec/EDL, comp, `output-vN.mp4`
 masters, `review/`, `_qa/`.
+
+Create durable state with `editor.py project init <project> --source <file> --lane <lane>`
+after choosing the lane below. Pass `--style <guide>` when an existing reference guide is
+selected and `--sound` when generated sound design is part of the request. Record each
+completed stage using `project checkpoint <project> <stage> --artifact <file>`; stages are
+ingest, style, edit, sound, qa and review. Checkpointing records actual file hashes and
+invalidates downstream work when inputs change. See
+[project tools](references/project-tools.md) for commands, optional-stage handling and
+the shared footage catalog. These receipts add no user approval gates.
 
 5. **Which lane.** Decide from what was handed over, before Stage 1:
    - a **single talking head + a brand** → Stages 1–7 below (branded-ad-edit).
@@ -121,6 +135,12 @@ Invoke **branded-ad-edit** and run its phases in order:
    card, full-bleed cut, B-roll (capture real screens with `broll-capture`; GENERATE clips/overlays with `openart-broll` (MCP) or `arcads-broll` (REST)), or breather — per `STYLE-GUIDE.md` (or house
    defaults). Write the storyboard down before composing; it is the artifact
    the user approves.
+   Give planned visual elements stable IDs and keep their expected output-time intervals
+   in `storyboard.json`. Mirror their actual static schedules with `data-start` and
+   `data-duration`/`data-end` in the composition. Run `qa:storyboard` before rendering to
+   catch missing IDs or empty/mismatched schedules; run with `--video` after rendering for
+   per-element contact sheets. This checks declared schedules, not JavaScript animation or
+   visible pixels; inspect the rendered evidence against the storyboard.
 4. **Compose.** Hand-authored composition (framing, cards, cuts, motion) +
    generated word-synced karaoke captions + SFX/bed placement markers.
    HyperFrames is the render engine (`npx hyperframes`, and make sure
@@ -192,8 +212,14 @@ When the reviewer leaves notes (or the user relays them):
    one row per reviewer note, with the note, what changed, and the **evidence
    in the RENDERED file** (frame grab timestamp, measured dB, probed duration
    delta). "Fixed" without evidence is not a row.
+   Canvas v2 can store replies, open/resolved state and paired before/after frame evidence
+   on each stable note ID. Include prior versions in the canvas config so those links stay
+   playable. Export/read back its JSON ledger and run `project import-review` to refresh
+   the project snapshot; do not drop unresolved notes from older versions.
 6. **New versions are NEW files** (`v2.mp4`, `v3.mp4`, …). Never overwrite a
    delivered file — the reviewer's timeline comments are anchored to it.
+   Register each new file with `project render <project> <video> --version <version>` before
+   checkpointing QA/review. Use `project approve` only to record an actual reviewer sign-off.
 7. **Republish to the same slug** so the review URL stays stable; the canvas
    tracks versions.
 8. **Patch a generated composition by unique block markers, then prove every block is

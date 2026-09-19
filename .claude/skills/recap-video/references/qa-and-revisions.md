@@ -6,16 +6,12 @@ Run the pack's `video-qa` on the encoded master. Use full decode, duration/frame
 black/freeze/flash detection and measured loudness. Add semantic watch/listen
 when the configured tools and current scope allow it. Record skipped layers.
 
-**Adapter limitation:** the current HyperFrames adapter creates a removed source
-range between each pair of spans. It assumes forward source order. A join from
-source 20–22 seconds back to 2–4 seconds becomes a reversed range, and reused
-source points can share event IDs. Do not use that adapter as source-boundary
-proof for reordered/reused takes. It also defaults expected output to
-1080x1920/30fps; the CLI's `--fps` controls semantic sampling, not this expectation.
-
-For a chronological, nonoverlapping 1080x1920/30fps edit, use the matching EDL
-plus **both** source and output words (output words alone skip source clipping
-checks):
+Use the matching EDL plus **both** source and output words (output words alone
+skip source clipping checks). The HyperFrames adapter supports chronological,
+reordered and reused takes with distinct retained-occurrence IDs and independent
+outgoing/incoming source boundaries. It reads expected FPS from the EDL;
+dimensions must come from an explicit manifest or adapter `expected` settings.
+The CLI's `--fps` controls semantic sampling, not expected output geometry/rate.
 
 ```bash
 npm --prefix "$PACK/tools/video-qa" run qa:video -- \
@@ -26,8 +22,8 @@ npm --prefix "$PACK/tools/video-qa" run qa:video -- \
   --source-words "$PROJECT/_cut_work/v1/source-words.json"
 ```
 
-For reordered/reused takes or other output geometry/rates, run the generic
-technical/semantic lane and separately audit **every** boundary by occurrence:
+When the intended EDL or source transcript is unavailable, run the generic
+technical/semantic lane and record the missing source-boundary coverage:
 
 ```bash
 npm --prefix "$PACK/tools/video-qa" run qa:video -- \
@@ -41,11 +37,11 @@ output audio window; do not turn them into one presumed removed interval.
 Compare source words crossing each edge, listen for complete tails/heads and
 repeats, measure base-audio join steps, and check dead air. Audit the first and
 last retained boundaries too. Use `dialogue.wav` for exact sample inspection,
-and verify against the final mix. Record verdict/evidence per occurrence. This
-manual L2 audit is required until the engine supports these joins; label the
-generic engine's L2 coverage as absent. Probe actual dimensions/FPS and compare
-them with the project spec manually in this lane. An independently validated
-explicit manifest with correct per-occurrence events is another option.
+and verify against the final mix. Record verdict/evidence per occurrence. Use
+this audit to resolve automated findings and to check first/last retained edges;
+the adapter does not emit a tail-trim event. When using the generic lane without
+edit intent, perform the full boundary audit manually. Probe dimensions/FPS and
+compare them with the project spec wherever no expected values were supplied.
 
 Define `PACK` as this repository and `PROJECT` as the media project. If additional
 dialogue cuts occur after assembly, regenerate the EDL and words before this run;

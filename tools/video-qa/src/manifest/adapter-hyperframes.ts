@@ -13,6 +13,8 @@
  */
 import { readFileSync } from "node:fs";
 import type { EditManifest, ManifestEvent, WordTiming } from "../types";
+import { z } from "zod";
+import { editManifestSchema } from "./schema";
 
 interface PlacementItem {
   id?: string;
@@ -22,13 +24,16 @@ interface PlacementItem {
   end?: number;
   track?: number | string;
   kind?: string;
+  text?: string;
 }
 
 interface EdlWindow {
+  id?: string;
   raw_start: number;
   raw_end: number;
   master_start: number;
   master_end: number;
+  origin?: "silence" | "manual";
 }
 
 interface EdlFile {
@@ -57,6 +62,7 @@ export interface HyperframesAdapterInput {
   sourceWordsPath?: string;
   expectedDuration?: number;
   expected?: { width?: number; height?: number; fps?: number };
+  intentional?: EditManifest["intentional"];
 }
 
 export function buildHyperframesManifest(input: HyperframesAdapterInput): EditManifest {
@@ -74,33 +80,52 @@ export function buildHyperframesManifest(input: HyperframesAdapterInput): EditMa
         kind,
         out: { start: p.start, end },
         label: p.label,
+        text: p.text,
+        ...(p.track != null ? { meta: { track: p.track } } : {}),
       });
     });
   }
 
   let expectedDuration = input.expectedDuration;
+  let edlFps: number | undefined;
   if (input.edlPath) {
-    const edl = JSON.parse(readFileSync(input.edlPath, "utf8")) as EdlFile;
+    const edl = z.object({ fps: z.number().positive().optional(), windows: z.array(z.object({
+      id: z.string().optional(), raw_start: z.number().nonnegative(), raw_end: z.number().nonnegative(),
+      master_start: z.number().nonnegative(), master_end: z.number().nonnegative(),
+      origin: z.enum(["silence", "manual"]).optional(),
+    }).refine((w) => w.raw_end > w.raw_start && w.master_end > w.master_start, "EDL windows must have positive source and output durations")) }).parse(JSON.parse(readFileSync(input.edlPath, "utf8"))) as EdlFile;
+    edlFps = edl.fps;
     const wins = edl.windows ?? [];
     if (wins.length) {
+      const occurrences = new Map<string, number>();
+      const segmentIds = wins.map((w, i) => {
+        if (i && w.master_start < wins[i - 1].master_end - 1e-6) throw new Error("EDL output windows overlap or are out of order");
+        const key = w.id ?? `src${w.raw_start}-${w.raw_end}`;
+        const count = (occurrences.get(key) ?? 0) + 1;
+        occurrences.set(key, count);
+        const id = `segment:${key}${count > 1 ? `:repeat${count}` : ""}`;
+        events.push({ id, kind: "segment", out: { start: w.master_start, end: w.master_end }, src: { start: w.raw_start, end: w.raw_end } });
+        return id;
+      });
       // Head trim: source material before the first window was dropped.
       if (wins[0].raw_start > 0.02) {
         events.push({
-          id: "cut:src0.0",
+          id: `cut:head>${segmentIds[0]}`,
           kind: "cut",
           dialogueCut: true,
-          out: { start: 0 },
+          out: { start: wins[0].master_start },
           src: { start: 0, end: wins[0].raw_start },
         });
       }
       for (let i = 1; i < wins.length; i++) {
         const removedStart = wins[i - 1].raw_end;
         events.push({
-          id: `cut:src${removedStart.toFixed(1)}`,
+          id: `cut:${segmentIds[i - 1]}>${segmentIds[i]}`,
           kind: "cut",
           dialogueCut: true,
           out: { start: wins[i].master_start },
-          src: { start: removedStart, end: wins[i].raw_start },
+          ...(wins[i].raw_start > removedStart ? { src: { start: removedStart, end: wins[i].raw_start } } : {}),
+          meta: { sourceBefore: removedStart, sourceAfter: wins[i].raw_start, ...(wins[i].origin ? { origin: wins[i].origin } : {}) },
         });
       }
       expectedDuration = expectedDuration ?? wins[wins.length - 1].master_end;
@@ -116,16 +141,16 @@ export function buildHyperframesManifest(input: HyperframesAdapterInput): EditMa
       end: w.end,
     }));
 
-  return {
+  return editManifestSchema.parse({
     version: 1,
     lane: "hyperframes",
     video: input.video,
     source: input.source,
     expectedDuration,
-    expected: input.expected ?? { width: 1080, height: 1920, fps: 30 },
+    expected: input.expected ?? (edlFps ? { fps: edlFps } : undefined),
     events,
-    intentional: {},
+    intentional: input.intentional ?? {},
     words: input.wordsPath ? readWords(input.wordsPath) : undefined,
     sourceWords: input.sourceWordsPath ? readWords(input.sourceWordsPath) : undefined,
-  };
+  }) as EditManifest;
 }

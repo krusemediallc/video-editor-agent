@@ -117,6 +117,7 @@ export interface QaIssue {
 }
 
 export type LayerStatus = "pass" | "warn" | "fail" | "skipped" | "degraded";
+export type QaLayerName = "technical" | "transcript" | "semantic";
 
 export interface LayerResult {
   status: LayerStatus;
@@ -124,6 +125,8 @@ export interface LayerResult {
   reason?: string;
   issues: QaIssue[];
   stats?: Record<string, unknown>;
+  /** Acquired output-time words retained for cached inspection packets. */
+  outputWords?: WordTiming[];
 }
 
 export type Verdict = "PASS" | "PASS_WITH_WARNINGS" | "FAIL";
@@ -138,6 +141,13 @@ export interface QaReport {
   generatedAt: string;
   iteration: number;
   verdict: Verdict;
+  coverage: {
+    complete: boolean;
+    completed: QaLayerName[];
+    unavailable: QaLayerName[];
+    required: QaLayerName[];
+    missingRequired: QaLayerName[];
+  };
   layers: {
     technical: LayerResult;
     transcript: LayerResult;
@@ -148,4 +158,4 @@ export interface QaReport {
 }
 
 /** Bump when detection logic / the Gemini rubric changes — part of the cache key. */
-export const QA_PROMPT_VERSION = "1";
+export const QA_PROMPT_VERSION = "2";

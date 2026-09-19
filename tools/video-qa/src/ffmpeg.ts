@@ -47,14 +47,20 @@ export function runCapture(
     const proc = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
     let out = "";
     let err = "";
+    let truncated = false;
     proc.stdout.on("data", (d) => {
-      if (out.length < cap) out += d.toString();
+      const text = d.toString();
+      if (out.length + text.length > cap) truncated = true;
+      if (out.length < cap) out += text;
     });
     proc.stderr.on("data", (d) => {
-      if (err.length < cap) err += d.toString();
+      const text = d.toString();
+      if (err.length + text.length > cap) truncated = true;
+      if (err.length < cap) err += text;
     });
     proc.on("error", reject);
     proc.on("close", (code) => {
+      if (truncated) { reject(new Error(`${bin} output exceeded ${cap} characters; refusing incomplete QA evidence`)); return; }
       if (code === 0 || opts?.allowNonZero) {
         resolve({ code: code ?? -1, stdout: out, stderr: err });
       } else {

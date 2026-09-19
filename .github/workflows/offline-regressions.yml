@@ -1,0 +1,37 @@
+name: Offline regression suite
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VIDEO_QA_LIVE_TESTS: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/video-qa/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install media prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ffmpeg
+      - name: Set up local demo dependencies
+        run: bash scripts/setup.sh --lane demo
+      - name: Check offline doctor and safe rerun
+        run: |
+          bash scripts/check-setup.sh --lane demo
+          bash scripts/setup.sh --lane demo --no-install
+      - name: Run offline suites and real media integration
+        run: bash scripts/test.sh --integration

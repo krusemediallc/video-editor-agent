@@ -13,7 +13,7 @@
  * window re-probe (probeWindow), used to confirm/clear a specific seam.
  */
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { EditManifest, WordTiming } from "./types";
@@ -114,6 +114,21 @@ export function mapSourceWordsToOutput(
   sourceWords: WordTiming[],
   sourceDuration: number
 ): WordTiming[] {
+  // Explicit retained segments preserve reordered/repeated takes and speed changes.
+  // A subtraction-only cut list cannot represent those timelines.
+  const segments = manifest.events.filter((e) => e.kind === "segment" && e.src?.end != null && e.out.end != null);
+  if (segments.length) {
+    return segments.sort((a, b) => a.out.start - b.out.start).flatMap((segment) => {
+      const source = segment.src!;
+      const ratio = (segment.out.end! - segment.out.start) / (source.end! - source.start);
+      return sourceWords.flatMap((w) => {
+        const mid = w.start + (w.end - w.start) * 0.4;
+        if (mid < source.start || mid >= source.end!) return [];
+        const start = Math.max(w.start, source.start), end = Math.min(w.end, source.end!);
+        return end - start > 0.02 ? [{ text: w.text, start: segment.out.start + (start - source.start) * ratio, end: segment.out.start + (end - source.start) * ratio }] : [];
+      });
+    });
+  }
   const removed = manifest.events
     .filter((e) => e.kind === "cut" && e.src && e.src.end != null)
     .map((e) => [e.src!.start, e.src!.end!] as [number, number])
@@ -169,18 +184,20 @@ export async function acquireWords(
   if (manifest.words?.length) {
     return { words: manifest.words, sourceWords: manifest.sourceWords ?? null, via: "manifest" };
   }
-  if (manifest.sourceWords?.length && manifest.source) {
-    const probe = await ffprobeJson(manifest.source);
-    const dur = parseFloat(probe.format.duration ?? "0");
+  if (manifest.sourceWords?.length) {
+    const dur = manifest.source && existsSync(manifest.source)
+      ? parseFloat((await ffprobeJson(manifest.source)).format.duration ?? "0")
+      : Math.max(...manifest.sourceWords.map((w) => w.end), ...manifest.events.map((e) => e.src?.end ?? 0));
     return {
       words: mapSourceWordsToOutput(manifest, manifest.sourceWords, dur),
       sourceWords: manifest.sourceWords,
       via: "manifest-source-words",
     };
   }
-  if (manifest.source && existsSync(manifest.source)) {
+  if (backend() !== "none" && manifest.source && existsSync(manifest.source)) {
     log(`[qa:L2] transcribing SOURCE audio (${backend()}) — this is the only full transcription; the render is never fully re-whispered`);
     const dir = mkdtempSync(join(tmpdir(), "vqa-words-"));
+    try {
     const wav = join(dir, "source.wav");
     await extractAudioFull(manifest.source, wav);
     const result = await transcribeFile(wav);
@@ -193,6 +210,7 @@ export async function acquireWords(
         via: result.via,
       };
     }
+    } finally { await rm(dir, { recursive: true, force: true }); }
   }
   return { words: null, sourceWords: null, via: "none" };
 }
@@ -205,11 +223,14 @@ export async function probeWindow(
   start: number,
   duration: number
 ): Promise<WordTiming[] | null> {
+  if (backend() === "none") return null;
   const dir = mkdtempSync(join(tmpdir(), "vqa-probe-"));
+  try {
   const wav = join(dir, "probe.wav");
   await extractAudioWindow(video, Math.max(0, start), duration, wav);
   const result = await transcribeFile(wav);
   if (!result) return null;
   const offset = Math.max(0, start);
   return result.words.map((w) => ({ text: w.text, start: w.start + offset, end: w.end + offset }));
+  } finally { await rm(dir, { recursive: true, force: true }); }
 }

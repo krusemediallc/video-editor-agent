@@ -5,11 +5,11 @@ description: >-
   persistent title banner, word-synced karaoke captions, callout boxes for
   asides and comment-keyword CTAs, and tight silence-cut "talking over myself"
   pacing — all described in ONE JSON spec and rendered deterministically.
-  Use whenever the user hands over a talking-head video and wants it edited,
+  Use when the user supplies a talking-head video and wants it edited,
   styled, or "made to match my other videos / this reference reel" — including
   "add my captions", "put the banner on it", "tighten the cuts / make it
   punchier", "cut the dead air", "add a callout when I say X", or "fix the part
-  where I trip over my words". Also use to tweak an existing reel-recut edit
+  where I trip over my words". Also use to revise a reel-recut edit
   (change banner text, add/move a callout, remove a stumble, re-time captions),
   and for a graphics-free raw cut (pacing only) on brand-deal footage a
   client's editor will finish. Not for plain subtitles on untouched footage
@@ -132,13 +132,16 @@ than the one that made it, and read the surviving transcript end to end as prose
 
 ## Long takes: three traps (learned on a 258 s source with 140 cuts)
 
-1. **`build_reel.py` dies past ~120 keep spans.** The single `select='between(...)+...'`
-   expression exceeds ffmpeg's expression parser ("Error while parsing expression … Cannot
-   allocate memory"). The plan and the QA manifest are still written before the render step,
-   so recover by rendering from the manifest with the **concat demuxer**: complement the
-   `kind:"cut"` events into keep spans, write `file/inpoint/outpoint` triples, re-encode. Two
-   sub-traps: `file` paths resolve relative to the list file, and a path with an apostrophe
-   breaks the quoting — symlink the source to a clean path and reference that.
+1. **Long cuts use the bundled frame/sample-grid assembler.** The old select/aselect
+   expression failed at ~120 keeps. `build_reel.py` now calls `scripts/cut_timeline.py`:
+   keep windows snap inward to the selected CFR grid, bounded 16-span batches encode
+   losslessly with PCM audio and short seam fades, then the joined video gets one AAC
+   encode. It verifies actual frames, PCM samples, audio presentation duration and decode.
+   Fractional FPS uses cumulative sample rounding. One-frame spans need timestamps rebuilt
+   after concat, otherwise coincident timestamps collapse frames. Do not restore the long
+   expression or per-span AAC approach. Existing output/work versions are protected; use a
+   fresh output filename after a failed attempt. The standalone helper accepts `--keeps`
+   containing `[[start,end], ...]` for raw cuts without Pillow.
 2. **The manifest's remapped `words` are not a word map.** They silently drop words that sit
    near a cut edge. Derive the cut-timeline word map from a fresh transcription of the
    RENDERED cut and anchor graphics on that.
@@ -167,10 +170,14 @@ roughly every 1.5 s that the reviewer described as "the entire video is super gl
 whisper pass (which only checks words) never sees. Measure it: dump the render to PCM and take
 `max(|diff(samples)|)` in ±10 ms around each seam.
 
-The fix that works: build the AUDIO in **one ffmpeg filter graph** — one `atrim` + `afade in` +
+The production repair that worked: build the AUDIO in **one ffmpeg filter graph** — one `atrim` + `afade in` +
 `afade out` (10 ms) per keep span, all into a single `concat=v=0:a=1` — then mux onto the video.
 Result on the same 116 seams: **median 0.002, 2 above 0.05.** A graph of ~120 filter chains is
 fine; it is the `select` EXPRESSION parser that has the ~120-term limit, not the graph.
+
+The bundled assembler now implements this principle with lossless PCM batches and 3 ms
+edge fades; inspect the joins and use a longer source-safe fade when the recording needs it.
+The batches bound decoder/memory usage without adding per-segment AAC padding.
 
 Two ways this goes wrong:
 
@@ -179,9 +186,8 @@ Two ways this goes wrong:
   a stall at every cut, worse than the click it was meant to fix.
 - **Do not cut video and audio with different rounding.** The concat demuxer rounds each span to
   whole frames (and drops a frame at some boundaries); sample-accurate `atrim` does not. Built
-  separately, the two streams drifted 367-412 ms apart over 180 s. Snap every span boundary to
-  the source's ACTUAL frame timestamps (`ffprobe -show_entries frame=pts_time`), cut the video
-  with a frame-exact `select='gte(t,a)*lt(t,b)+...'` (chunk it under the parser limit and
-  `-c copy` concat the chunks; the inclusive `between()` adds a frame at exact boundaries), and
-  trim the audio to `n_frames/30` per span. Verify: per-chunk frame counts equal the planned
-  counts exactly, and the two stream durations match to a frame.
+  separately, the two streams drifted 367-412 ms apart over 180 s. Use the assembler's shared
+  selected CFR grid for both streams. `fps: "source"` retains the nominal source rate;
+  VFR input is normalized onto that selected grid. Its inward rounding can shorten a keep
+  by up to one frame on each edge, so listen at speech boundaries. Verify the per-render
+  receipt and measured joins instead of treating a successful encode as proof of pacing.

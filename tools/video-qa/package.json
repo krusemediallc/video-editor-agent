@@ -7,6 +7,9 @@
   "scripts": {
     "qa:video": "tsx cli/qa-video.ts",
     "qa:inspect": "tsx cli/inspect-video.ts",
+    "qa:storyboard": "tsx cli/qa-storyboard.ts",
+    "qa:test": "tsx --test src/__tests__/*.test.ts",
+    "test:live": "VIDEO_QA_LIVE_TESTS=1 tsx --test src/__tests__/*.test.ts",
     "test": "tsx --test src/__tests__/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

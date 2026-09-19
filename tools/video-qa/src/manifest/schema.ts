@@ -10,7 +10,9 @@ import { dirname, isAbsolute, resolve } from "node:path";
 import { z } from "zod";
 import type { EditManifest, ManifestEvent, TimeRange } from "../types";
 
-const timeRange = z.object({ start: z.number(), end: z.number() });
+const seconds = z.number().finite().nonnegative();
+const timeRange = z.object({ start: seconds, end: seconds }).refine((r) => r.end > r.start, "end must be after start");
+const optionalRange = z.object({ start: seconds, end: seconds.optional() }).refine((r) => r.end == null || r.end > r.start, "end must be after start");
 
 const manifestEvent = z.object({
   id: z.string().min(1),
@@ -25,8 +27,8 @@ const manifestEvent = z.object({
     "segment",
     "other",
   ]),
-  out: z.object({ start: z.number(), end: z.number().optional() }),
-  src: z.object({ start: z.number(), end: z.number().optional() }).optional(),
+  out: optionalRange,
+  src: optionalRange.optional(),
   label: z.string().optional(),
   text: z.string().optional(),
   dialogueCut: z.boolean().optional(),
@@ -35,21 +37,21 @@ const manifestEvent = z.object({
 
 const wordTiming = z.object({
   text: z.string(),
-  start: z.number(),
-  end: z.number(),
-});
+  start: seconds,
+  end: seconds,
+}).refine((w) => w.end >= w.start, "word end must not precede start");
 
 export const editManifestSchema = z.object({
   version: z.literal(1),
   lane: z.enum(["reel-recut", "hyperframes", "palmier", "generic"]),
-  video: z.string(),
+  video: z.string().min(1),
   source: z.string().optional(),
-  expectedDuration: z.number().optional(),
+  expectedDuration: z.number().positive().optional(),
   expected: z
     .object({
-      width: z.number().optional(),
-      height: z.number().optional(),
-      fps: z.number().optional(),
+      width: z.number().int().positive().optional(),
+      height: z.number().int().positive().optional(),
+      fps: z.number().positive().optional(),
     })
     .optional(),
   events: z.array(manifestEvent),
@@ -59,13 +61,22 @@ export const editManifestSchema = z.object({
       silentRegions: z.array(timeRange).optional(),
       stillRegions: z.array(timeRange).optional(),
       loudnessTarget: z
-        .object({ lufs: z.number(), tolerance: z.number().optional() })
+        .object({ lufs: z.number(), tolerance: z.number().nonnegative().optional() })
         .optional(),
       noAudio: z.boolean().optional(),
     })
     .optional(),
   words: z.array(wordTiming).optional(),
   sourceWords: z.array(wordTiming).optional(),
+}).superRefine((m, ctx) => {
+  const ids = new Set<string>();
+  for (const [i, e] of m.events.entries()) {
+    if (ids.has(e.id)) ctx.addIssue({ code: "custom", path: ["events", i, "id"], message: `Duplicate event ID: ${e.id}` });
+    ids.add(e.id);
+    if (m.expectedDuration != null && (e.out.end ?? e.out.start) > m.expectedDuration + 0.15) {
+      ctx.addIssue({ code: "custom", path: ["events", i, "out"], message: "Event extends beyond expected duration" });
+    }
+  }
 });
 
 /** Load + validate a normalized manifest; resolves video/source paths relative

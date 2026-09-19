@@ -107,9 +107,9 @@ mode before a full export. See the composition reference for the proven traps.
 
 Read [references/qa-and-revisions.md](references/qa-and-revisions.md). Use
 [video-qa](../video-qa/SKILL.md) on the actual mastered MP4. Use the matching
-version's EDL/words where the adapter supports them; reordered/reused source
-joins require the occurrence-aware seam audit in the QA reference. Inspect
-flagged seams; ASR timing alone does not prove
+version's EDL and both source/output words, including reordered/reused takes.
+Use the occurrence-aware seam audit in the QA reference to adjudicate findings
+and verify first/last retained edges. ASR timing alone does not prove
 clipping, and an SFX attack can resemble a splice click. Preserve the engine's
 raw verdict and document evidence for each adjudicated finding.
 

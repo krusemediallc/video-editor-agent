@@ -1,165 +1,145 @@
 #!/usr/bin/env node
-/**
- * build-canvas.mjs — assemble a here.now review canvas directory from a video + a beat map.
- *
- *   node build-canvas.mjs <config.json>
- *
- * Writes <outDir>/{index.html, <video-vN.mp4>, .herenow/data.json} ready for the here-now
- * skill's publish.sh. It probes the video with ffprobe for duration/fps so the scrubber is
- * frame-accurate — a note pinned to the wrong frame sends the next cut chasing the wrong beat.
- *
- * Env:
- *   FFPROBE          path to ffprobe (default: "ffprobe" on PATH)
- *   HERENOW_PUBLISH  path to the here-now skill's publish.sh (only used in the printed hint)
- *
- * config.json:
- * {
- *   "video":   "videos/proj/output-v2.mp4",    // source file to copy in
- *   "outDir":  "videos/proj/review",
- *   "title":   "Product launch ad",
- *   "version": "v1",                           // ALSO the notes filter + the video filename suffix
- *   "versionLabel": "V1",                      // optional, defaults to version.toUpperCase()
- *   "eyebrow": "STUDIO · EDIT REVIEW",
- *   "blurb":   "Motion graphic on every line, cut like the reference ad.",
- *   "author":  "Reviewer",
- *   "accents": ["#0082fb", "#a033ff", "#ff5c87"],   // optional, defaults to a neutral blue→pink
- *   "playerWidth": "min(52vh,430px)",               // optional
- *   "facts":   ["30.03s · 1080×1920 · 30fps", "8 designed cards"],
- *   "beats":   [ { "t": 0.0, "n": "Hook", "s": "why it's here", "tone": "mute" }, ... ]
- * }
- *
- * tone: "" (accent) | "red" | "green" | "amber" | "mute" — colours the beat's left rule so the
- * arc of the edit is legible at a glance in the sidebar.
- */
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
-import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+/** Build a review directory. Existing single-video configs and download(s) remain supported. */
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, statSync, openSync, readSync, closeSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// fileURLToPath, not new URL().pathname — the latter percent-encodes spaces, and project
-// paths often contain them.
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const TEMPLATE = path.join(HERE, "..", "assets", "canvas-template.html");
-const MANIFEST = path.join(HERE, "..", "assets", "data.json");
-const FFPROBE =
-  process.env.FFPROBE ||
-  ["/opt/homebrew/bin/ffprobe", "/usr/local/bin/ffprobe"].find((p) => existsSync(p)) ||
-  "ffprobe";   // PATH last: a Homebrew Mac whose non-login shell lacks /opt/homebrew/bin still works
-const PUBLISH_SH =
-  process.env.HERENOW_PUBLISH || "~/.agents/skills/here-now/scripts/publish.sh";
+const ASSETS = path.join(HERE, '..', 'assets');
+export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Historical editor notes permit <b>; no other tags or attributes are accepted.
+const basicHTML = value => escapeHTML(value).replace(/&lt;(\/?)b&gt;/g, '<$1b>');
+export const scriptJSON = value => JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+const safeName = name => {
+  if (!name || name !== path.basename(name) || /[\x00-\x1f\\]/.test(name) || name === '.' || name === '..') throw new Error('Download name must be a filename');
+  return name;
+};
 
-const cfgPath = process.argv[2];
-if (!cfgPath) {
-  console.error("usage: node build-canvas.mjs <config.json>");
-  process.exit(1);
-}
-const cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
-const cfgDir = path.dirname(path.resolve(cfgPath));
-const resolve = (p) => (path.isAbsolute(p) ? p : path.resolve(cfgDir, p));
-
-const video = resolve(cfg.video);
-const outDir = resolve(cfg.outDir);
-if (!existsSync(video)) throw new Error(`video not found: ${video}`);
-
-/* ── probe the real file, never trust intent ── */
-function probe(file) {
-  let out;
+function fileHash(file) {
+  const hash = createHash('sha256'), buffer = Buffer.alloc(1024 * 1024), fd = openSync(file,'r');
   try {
-    out = execFileSync(
-      FFPROBE,
-      ["-v", "error", "-select_streams", "v:0",
-       "-show_entries", "format=duration", "-show_entries", "stream=r_frame_rate,width,height",
-       "-of", "default=noprint_wrappers=1", file],
-      { encoding: "utf8" }
-    );
-  } catch (e) {
-    if (e.code === "ENOENT") {
-      throw new Error(
-        `ffprobe not found ("${FFPROBE}"). Install ffmpeg or set the FFPROBE env var to the binary.`
-      );
-    }
-    throw e;
-  }
-  const get = (k) => (out.match(new RegExp(`^${k}=(.+)$`, "m")) || [])[1];
-  const [num, den] = (get("r_frame_rate") || "30/1").split("/").map(Number);
-  return {
-    duration: parseFloat(get("duration")),
-    fps: Math.round((num / (den || 1)) * 1000) / 1000,
-    width: parseInt(get("width"), 10),
-    height: parseInt(get("height"), 10),
-  };
+    let count;
+    while ((count=readSync(fd,buffer,0,buffer.length,null)) > 0) hash.update(buffer.subarray(0,count));
+    return hash.digest('hex');
+  } finally { closeSync(fd); }
 }
-const meta = probe(video);
 
-const version = cfg.version || "v1";
-const versionLabel = cfg.versionLabel || version.toUpperCase();
-const accents = cfg.accents || ["#4aa8ff", "#a033ff", "#ff5c87"];
-const hexToRgba = (hex, a) => {
-  const h = hex.replace("#", "");
-  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
-};
+export function buildCanvas(cfgPath, {probe: suppliedProbe} = {}) {
+  const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
+  const cfgDir = path.dirname(path.resolve(cfgPath));
+  const resolve = p => path.isAbsolute(p) ? p : path.resolve(cfgDir, p);
+  if (!cfg.outDir) throw new Error('outDir is required');
+  const outDir = resolve(cfg.outDir);
+  const ffprobe = process.env.FFPROBE || ['/opt/homebrew/bin/ffprobe','/usr/local/bin/ffprobe'].find(existsSync) || 'ffprobe';
+  const probe = suppliedProbe || (file => {
+    const json = JSON.parse(execFileSync(ffprobe, ['-v','error','-select_streams','v:0','-show_entries',
+      'format=duration:stream=r_frame_rate,avg_frame_rate,width,height','-of','json',file], {encoding:'utf8'}));
+    const stream = json.streams[0], [num, den] = stream.r_frame_rate.split('/').map(Number);
+    return {duration:Number(json.format.duration), fps:num/den, fpsNumerator:num, fpsDenominator:den,
+      width:stream.width, height:stream.height, variableFrameRate:stream.avg_frame_rate !== stream.r_frame_rate};
+  });
+  const version = String(cfg.version || cfg.versions?.at(-1)?.version || 'v1');
+  const inputs = cfg.versions?.length ? [...cfg.versions] : [{version, video:cfg.video, label:cfg.versionLabel, beats:cfg.beats}];
+  if (!inputs.some(v => v.version === version) && cfg.video) inputs.push({version, video:cfg.video, label:cfg.versionLabel, beats:cfg.beats});
+  const title = String(cfg.title || 'Cut');
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'cut';
+  const seen = new Set(), copies = [];
+  const versions = inputs.map(input => {
+    const id = String(input.version || '');
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,19}$/.test(id) || seen.has(id)) throw new Error('Versions need unique, filename-safe IDs');
+    seen.add(id);
+    if (typeof input.video !== 'string') throw new Error(`Missing video for ${id}`);
+    const source = resolve(input.video);
+    if (!existsSync(source)) throw new Error(`Video not found: ${source}`);
+    const meta = probe(source);
+    if (!(meta.fps > 0 && Number.isFinite(meta.fps) && meta.duration > 0)) throw new Error(`Invalid video metadata for ${id}`);
+    const file = `${slug}-${id}${path.extname(source)}`;
+    copies.push({source, file});
+    const beats = (input.beats || (id === version ? cfg.beats : []) || []).map(b => {
+      if (!Number.isFinite(b.t) || b.t < 0 || b.t > meta.duration) throw new Error(`Invalid beat time for ${id}`);
+      return {t:b.t,n:String(b.n || ''),s:String(b.s || ''),tone:b.tone || ''};
+    }).sort((a,b) => a.t-b.t);
+    return {version:id, label:String(input.label || id.toUpperCase()), file, ...meta, beats, sha256:fileHash(source)};
+  });
+  const active = versions.find(v => v.version === version);
+  if (!active) throw new Error(`Active version ${version} is not listed`);
+  const accents = cfg.accents || ['#4aa8ff','#a033ff','#ff5c87'];
+  if (accents.length !== 3 || accents.some(c => !/^#[a-f\d]{3}([a-f\d]{3})?$/i.test(c))) throw new Error('accents must be three hex colors');
+  const rgba = (hex, alpha) => {
+    let h = hex.slice(1); if (h.length === 3) h = [...h].map(c => c+c).join('');
+    const n = parseInt(h,16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${alpha})`;
+  };
+  const playerWidth = cfg.playerWidth || 'min(52vh,430px)';
+  if (!/^[a-z\d\s(),.%+*\/-]+$/i.test(playerWidth)) throw new Error('Invalid playerWidth');
+  const downloadInputs = [...(cfg.download ? [{file:cfg.download,name:cfg.downloadName,label:cfg.downloadLabel}] : []), ...(cfg.downloads || [])];
+  const occupied = new Set(['index.html','review-config.json','review-model.mjs','review-app.mjs',...copies.map(c => c.file)]);
+  const downloads = downloadInputs.map((d, i) => {
+    const source = resolve(d.file);
+    if (!existsSync(source)) throw new Error(`Download not found: ${source}`);
+    const file = safeName(d.name || path.basename(source));
+    if (occupied.has(file)) {
+      const existing = copies.find(c => c.file === file && c.source === source);
+      if (!existing) throw new Error(`Output filename collision: ${file}`);
+    } else { copies.push({source,file}); occupied.add(file); }
+    const mb = Math.round(statSync(source).size/1048576);
+    return `<a class="btn btn-sm" ${i===0?'id="downloadbtn"':''} href="${escapeHTML(encodeURIComponent(file))}" download>${escapeHTML(d.label || `↓ Download${mb?` (${mb} MB)`:''}`)}</a>`;
+  }).join('\n');
+  const storage = cfg.storage || {mode:'remote'};
+  if (!['local','remote'].includes(storage.mode)) throw new Error('storage.mode must be local or remote');
+  // Preflight every version before writing any page, receipt, module or media.
+  // Retain receipts for hidden versions so their IDs cannot later mean new footage.
+  const priorPath = path.join(outDir,'review-config.json');
+  const priorConfig = existsSync(priorPath) ? JSON.parse(readFileSync(priorPath,'utf8')) : null;
+  const versionReceipts = (priorConfig?.versionReceipts || priorConfig?.versions || []).map(prior => {
+    let sha256=prior.sha256;
+    if (!sha256 && prior.file && prior.file === path.basename(prior.file)) {
+      const priorFile=path.join(outDir,prior.file);
+      if (existsSync(priorFile)) sha256=fileHash(priorFile);
+    }
+    return {version:prior.version,file:prior.file,sha256};
+  });
+  for (const v of versions) {
+    const prior = versionReceipts.find(old => old.version === v.version);
+    const target = path.join(outDir,v.file);
+    if ((prior?.sha256 && prior.sha256 !== v.sha256) || (existsSync(target) && fileHash(target) !== v.sha256)) {
+      throw new Error(`Version ${v.version} already contains different media. Keep the delivered version and use a new version ID and file.`);
+    }
+    if (!prior) versionReceipts.push({version:v.version,file:v.file,sha256:v.sha256});
+  }
+  // A download alias must not overwrite a previously published version's media.
+  for (const {source,file} of copies) {
+    const protectedVersion=versionReceipts.find(prior => prior.file === file);
+    if (protectedVersion?.sha256 && fileHash(source) !== protectedVersion.sha256) {
+      throw new Error(`Output ${file} belongs to version ${protectedVersion.version}; choose a different download filename.`);
+    }
+  }
+  const browserConfig = {schemaVersion:2,title,version,versions,versionReceipts,author:String(cfg.author || 'Reviewer'),
+    storage:{mode:storage.mode,key:String(storage.key || `video-review:${slug}`)},
+    reviewData:{comments:cfg.reviewData?.comments || [],events:cfg.reviewData?.events || []}};
+  const notesCard = cfg.notes?.length ? `<div class="card"><h2>Editor's notes</h2><p class="hint">${escapeHTML(cfg.notesHint || 'Changes and decisions for this cut.')}</p><div class="notes">${cfg.notes.map(n => `<div class="note" data-tone="${escapeHTML(n.tone || '')}"><span class="nn">${escapeHTML(n.n)}</span><span class="nb">${basicHTML(n.b)}</span></div>`).join('')}</div></div>` : '';
+  const subs = {TITLE:escapeHTML(title),VERSION_LABEL:escapeHTML(active.label),EYEBROW:escapeHTML(cfg.eyebrow || 'EDIT REVIEW'),
+    BLURB:basicHTML(cfg.blurb || ''),FACTS:(cfg.facts || [`${active.duration.toFixed(2)}s · ${active.width}×${active.height} · ${active.fps.toFixed(3).replace(/\.?0+$/,'')}fps`]).map(f => `<span class="fact">${basicHTML(f)}</span>`).join(''),
+    NOTES_CARD:notesCard,DOWNLOAD_BTN:downloads,VIDEO_FILE:escapeHTML(encodeURIComponent(active.file)),
+    ACCENT_1:accents[0],ACCENT_2:accents[1],ACCENT_3:accents[2],GLOW_1:rgba(accents[0],.2),GLOW_2:rgba(accents[1],.14),PLAYER_WIDTH:playerWidth,
+    CONFIG_JSON:scriptJSON(browserConfig)};
+  let html = readFileSync(path.join(ASSETS,'canvas-template.html'),'utf8');
+  html = html.replace(/\{\{([A-Z_0-9]+)\}\}/g, (match,key) => {
+    if (!(key in subs)) throw new Error(`Unknown template field: ${key}`); return subs[key];
+  });
+  mkdirSync(path.join(outDir,'.herenow'),{recursive:true});
+  writeFileSync(path.join(outDir,'index.html'),html);
+  writeFileSync(path.join(outDir,'review-config.json'),JSON.stringify(browserConfig,null,2)+'\n');
+  for (const name of ['review-model.mjs','review-app.mjs']) copyFileSync(path.join(ASSETS,name),path.join(outDir,name));
+  copyFileSync(path.join(ASSETS,'data.json'),path.join(outDir,'.herenow','data.json'));
+  for (const {source,file} of copies) if (path.resolve(source)!==path.resolve(outDir,file)) copyFileSync(source,path.join(outDir,file));
+  return {outDir,config:browserConfig};
+}
 
-/* Cache-bust the video filename per version. Republishing a new cut under the SAME
-   filename leaves reviewers staring at the browser-cached old one ("why isn't it on
-   here.now?"). The filename is the cache key — change it every round. */
-const slugBase = (cfg.title || "cut").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const videoFile = `${slugBase}-${version}${path.extname(video)}`;
-
-const facts = (cfg.facts || [`${meta.duration.toFixed(2)}s · ${meta.width}×${meta.height} · ${meta.fps}fps`])
-  .map((f) => `<span class="fact">${f}</span>`)
-  .join("\n      ");
-
-const beats = (cfg.beats || []).map((b) => ({ t: b.t, n: b.n, s: b.s || "", tone: b.tone || "" }));
-
-/* Optional "Editor's notes" card: the decisions and flags that belong with the cut but
-   have no single timestamp (what got removed and why, what still needs a human call).
-   Rendered server-side so the page needs no extra JS. `b` may contain <b>. */
-const notesCard = (cfg.notes || []).length
-  ? `<div class="card">
-        <h2>Editor's notes${cfg.notesCount === false ? "" : ` <span class="cnt">${cfg.notes.length}</span>`}</h2>
-        <p class="hint">${cfg.notesHint || "What I changed, what I deliberately left alone, and what needs your call."}</p>
-        <div class="notes">${cfg.notes
-          .map((n) => `<div class="note" data-tone="${n.tone || ""}"><span class="nn">${n.n}</span><span class="nb">${n.b || ""}</span></div>`)
-          .join("")}</div>
-      </div>`
-  : "";
-
-let html = readFileSync(TEMPLATE, "utf8");
-const subs = {
-  TITLE: cfg.title || "Cut",
-  VERSION: version,
-  VERSION_LABEL: versionLabel,
-  EYEBROW: cfg.eyebrow || "EDIT REVIEW",
-  BLURB: cfg.blurb || "",
-  AUTHOR: cfg.author || "Reviewer",
-  VIDEO_FILE: videoFile,
-  FPS: String(meta.fps),
-  DURATION: String(meta.duration),
-  FACTS: facts,
-  NOTES_CARD: notesCard,
-  BEATS_JSON: JSON.stringify(beats, null, 2),
-  ACCENT_1: accents[0],
-  ACCENT_2: accents[1],
-  ACCENT_3: accents[2],
-  GLOW_1: hexToRgba(accents[0], 0.2),
-  GLOW_2: hexToRgba(accents[1], 0.14),
-  PLAYER_WIDTH: cfg.playerWidth || "min(52vh,430px)",
-};
-for (const [k, v] of Object.entries(subs)) html = html.split(`{{${k}}}`).join(v);
-const leftover = html.match(/\{\{[A-Z_0-9]+\}\}/g);
-if (leftover) throw new Error(`unreplaced placeholders: ${[...new Set(leftover)].join(", ")}`);
-
-mkdirSync(path.join(outDir, ".herenow"), { recursive: true });
-writeFileSync(path.join(outDir, "index.html"), html);
-copyFileSync(MANIFEST, path.join(outDir, ".herenow", "data.json"));
-copyFileSync(video, path.join(outDir, videoFile));
-
-console.log(`canvas built → ${outDir}`);
-console.log(`  video   ${videoFile}  (${meta.duration.toFixed(2)}s, ${meta.width}×${meta.height}, ${meta.fps}fps)`);
-console.log(`  beats   ${beats.length}`);
-console.log(`  notes   filtered to version "${version}"`);
-console.log(`\nnext: bash ${PUBLISH_SH} "${outDir}" \\`);
-console.log(`        --title "${subs.TITLE} — ${versionLabel} review" --client claude-code`);
-console.log(`      (add --slug <existing-slug> to keep the same URL across versions;`);
-console.log(`       set HERENOW_PUBLISH if the here-now skill lives elsewhere)`);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (!process.argv[2]) {console.error('usage: node build-canvas.mjs <config.json>'); process.exit(1);}
+  const result = buildCanvas(process.argv[2]);
+  console.log(`canvas built → ${result.outDir}\n  ${result.config.versions.length} version(s), active ${result.config.version}\n  storage: ${result.config.storage.mode}`);
+  console.log(result.config.storage.mode === 'local' ? 'Serve this directory with a local HTTP server. Notes persist in this browser; export JSON to share/read back.' : `next: publish ${result.outDir} using here-now (reuse the existing project slug)`);
+}

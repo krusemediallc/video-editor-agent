@@ -23,9 +23,11 @@ export function cacheKey(parts: {
   manifestSha: string;
   layer: string;
   model?: string;
+  /** Effective options, inputs and backend availability that affect this layer. */
+  config?: unknown;
 }): string {
   return sha256Text(
-    [parts.videoSha, parts.manifestSha, QA_PROMPT_VERSION, parts.model ?? "-", parts.layer].join("|")
+    [parts.videoSha, parts.manifestSha, QA_PROMPT_VERSION, parts.model ?? "-", parts.layer, JSON.stringify(parts.config ?? {})].join("|")
   ).slice(0, 24);
 }
 

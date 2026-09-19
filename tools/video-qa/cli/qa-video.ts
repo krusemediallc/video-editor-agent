@@ -17,7 +17,7 @@ import { loadManifest } from "../src/manifest/schema";
 import { buildHyperframesManifest } from "../src/manifest/adapter-hyperframes";
 import { runQa } from "../src/index";
 import { exitCode } from "../src/report";
-import type { EditManifest, WordTiming } from "../src/types";
+import type { EditManifest, WordTiming, QaLayerName } from "../src/types";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -112,10 +112,20 @@ async function main() {
     geminiFps: arg("fps") ? Number(arg("fps")) : undefined,
     outDir: arg("out") ? resolveFromInvoker(arg("out")!) : undefined,
     noCache: flag("no-cache"),
+    requiredLayers: requiredLayers(),
+    log: (m) => console.error(m),
   });
 
   if (flag("json")) console.log(JSON.stringify(report, null, 1));
   process.exit(exitCode(report.verdict));
+}
+
+function requiredLayers(): QaLayerName[] | undefined {
+  const raw = arg("require-layers");
+  if (raw == null) return undefined;
+  const names = raw.split(",").map((s) => s.trim());
+  if (!names.length || names.some((n) => !["technical", "transcript", "semantic"].includes(n))) throw new Error("--require-layers accepts technical,transcript,semantic");
+  return [...new Set(names)] as QaLayerName[];
 }
 
 main().catch((e) => {

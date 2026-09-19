@@ -75,7 +75,7 @@ The master is `base-cut-<version>.mp4`. Supporting artifacts live together in
 |---|---|
 | `inputs.json`, `pauses.json`, `silencedetect.log` | Input/settings receipt with source fingerprint; no stale cross-source pause cache |
 | `edl.json` | Ordered source/output spans and total frame/sample counts |
-| `qa-edl.json` | `windows` form for the HyperFrames adapter; see its reorder/reuse and geometry limits in `qa-and-revisions.md` |
+| `qa-edl.json` | `windows` form for the HyperFrames adapter; see intent and coverage requirements in `qa-and-revisions.md` |
 | `words-cut.json` | Words mapped per retained source occurrence, with provenance |
 | `words-master.json`, `source-words.json` | Output/source words for composition and QA |
 | `alignment-warnings.json` | Partial or unmapped word spans requiring listening review |

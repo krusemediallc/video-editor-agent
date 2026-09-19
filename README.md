@@ -5,7 +5,7 @@ finished edit out — style cloned from a reference reel, sound-designed with El
 QA'd frame by frame and in dB, delivered on a live review page with timeline comments,
 and revised round after round until sign-off.
 
-This is not a rendering library. It is a set of skills, plus one QA engine, that make a
+This is not a rendering library. It is a set of skills, local project tools and a QA engine that make a
 Claude Code session behave like a working video editor with a proven pipeline and a
 "verify pixels and dB, not intentions" culture. It gets better with every real edit: the
 process goes into the skills, the personal details stay in a gitignored context file.
@@ -59,23 +59,51 @@ footage + (optional) reference reel + brand/site + ratio
 ## Quickstart
 
 1. Clone this repo and open it in Claude Code.
-2. Work through **[SETUP.md](SETUP.md)** (or run `bash scripts/check-setup.sh`) —
-   it lists every tool and API with a check + fix for each. No MCP servers needed.
-3. Copy `.env.example` to `.env` and paste your `ELEVENLABS_API_KEY`.
-4. Copy `MASTER_CONTEXT.template.md` to `MASTER_CONTEXT.md` and fill in your brand,
-   defaults and **projects directory** (where the videos live — default `outputs/`).
-5. Drop your raw footage into the projects directory (or `footage/`) and say:
+2. Run `bash scripts/setup.sh --demo`. It installs local QA dependencies, creates missing
+   config templates and builds a synthetic edit, catalog, QA evidence and versioned review
+   page. Requires Python 3.10+, Node.js 20+, ffmpeg/ffprobe; no paid APIs or model downloads.
+   **[SETUP.md](SETUP.md)** covers prerequisites, workflow-specific setup and safe skill linking.
+3. Fill in your brand, defaults and **projects directory** in `MASTER_CONTEXT.md`
+   (where the videos live — default `outputs/`). Configure keys only for workflows you use.
+4. Drop your raw footage into the projects directory (or `footage/`) and say:
    **"edit this like `<reference reel>`"** — or just "edit this video". The
    `video-edit-pipeline` skill takes it from there.
+
+## Project and review tools
+
+- **Review canvas v2:** version picker, synchronized comparison, open/resolved notes,
+  replies and before/after frame evidence. Shared reviews use append-only here.now records;
+  an explicitly local mode supports demos without hosting. Export the complete revision
+  ledger as JSON and import it into project state.
+- **Storyboard coverage:** `qa:storyboard` checks planned IDs and timed HTML intervals,
+  then extracts contact sheets from the actual MP4. Static coverage and visual verification
+  are reported separately; see [the QA engine](tools/video-qa/README.md).
+- **Resumable projects:** `python3 tools/editor/editor.py project init|status|resume`
+  records source identities, stage artifacts, renders, approvals and outstanding notes.
+  Changed or missing files invalidate the relevant progress. Explicit configured commands
+  can resume one stage at a time.
+- **Reusable footage catalog:** `python3 tools/editor/editor.py catalog ingest|search`
+  indexes media metadata, thumbnails, local transcripts, selected intervals and past uses.
+  Stable content IDs prevent duplicate indexing. See [project tools](tools/editor/README.md)
+  for full commands and transcript options.
+- **Offline regression suite:** `bash scripts/test.sh --integration` covers production
+  failures, project/catalog behavior, setup safety, the review model and a real media demo.
+  GitHub Actions runs the same suite on Linux. Paid/live transcription is opt-in.
+
+QA reports include layer coverage; unavailable checks are not labeled a clean pass.
+Review instructions and sampling configuration participate in cache identity. The recut
+renderer uses bounded lossless batches and one final AAC encode for long cut timelines.
+Serve any local review with `python3 scripts/serve-review.py --directory <review-folder>`;
+it supports the byte-range requests video players need for frame seeking.
 
 ## Using it from your own working repo
 
 Most people keep their videos, queues and brand tooling in a repo of their own. Keep that,
 and point it at this pack instead of copying skills into it:
 
-- Symlink every skill: `ln -s "../../../../Video Editor Agent/.claude/skills/<name>"
-  <your repo>/.claude/skills/<name>` (relative links survive network mounts). A session
-  started in your repo loads the skills; the files stay here, edited and committed here.
+- Link the skills with `bash "<pack>/scripts/setup.sh" --no-install --link-skills "<working-repo>"`.
+  Setup computes relative links for the actual directory layout and preserves existing
+  paths. A session started in your repo loads the skills; their files stay here.
 - Set the projects directory in `MASTER_CONTEXT.md` (and `VIDEO_PROJECTS_DIR` in `.env`)
   to your media folder. Media never moves into this repo.
 - Alias the QA engine in your `package.json`:
@@ -95,7 +123,7 @@ and point it at this pack instead of copying skills into it:
 | whisper (bundled route) | word-level transcription | `npx hyperframes transcribe` manages whisper.cpp models; `whisper-cli` + a ggml model unlocks the VAD-driven cut planners |
 | python3 | helper scripts | PIL (`pip install pillow`) for overlays; numpy + scipy for `ai-audio-sound-design` |
 | QA engine | `tools/video-qa` | `npm --prefix tools/video-qa install` (tsx, zod, dotenv) |
-| ElevenLabs API key | SFX + music + ambience generation | `ELEVENLABS_API_KEY` in `.env` at repo root |
+| ElevenLabs API key (sound generation only) | SFX + music + ambience generation | `ELEVENLABS_API_KEY` in `.env`; local/demo/QA workflows do not require it |
 | here-now skill + credentials | canvas review delivery | agent docs at https://here.now/docs (fetch with `User-Agent: claude`); credentials live in `~/.herenow/credentials` |
 | `GEMINI_API_KEY` (optional) | video-qa's watch+listen layer (L3) | skip if unset; the other layers still run |
 | `OPENAI_API_KEY` (optional) | cloud whisper fallback (QA engine, hook-splitter, arcads-video-edit) | local whisper.cpp is the default |
@@ -136,12 +164,13 @@ HyperFrames, whisper models, or ffmpeg.
 
 - **CapCut export is work-in-progress.** The layered export works but the schema patch is
   still being hardened — always verify the draft opens in CapCut before relying on it.
-- **Canvas delivery requires here.now.** Without the here-now skill and credentials you
-  still get the rendered MP4, just no live review page or timeline-comment loop.
+- **Shared canvas delivery requires here.now.** Local mode runs without hosting and keeps
+  feedback in that browser; export its JSON to transfer notes. Shared mode persists feedback
+  through the existing public review link. Local mode is not a multi-device review store.
 - Transcription quality tracks your whisper model choice; tiny models miss words that then
   miss captions.
 - The main build assumes single-subject talking-head source footage; multi-shot sources go
   through `arcads-video-edit` (screen + camera takes), `recap-video` (spoken takes and
   event B-roll), or `hook-splitter` (one long composite) first.
-- The QA engine's mid-word-cut test fixture uses macOS `say`; on other platforms that one
-  test is skipped.
+- Default tests are offline. The optional live transcription integration uses macOS `say`
+  and an installed transcriber; deterministic seam tests run without it.

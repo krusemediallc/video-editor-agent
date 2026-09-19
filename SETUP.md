@@ -1,107 +1,136 @@
-# SETUP — connect every tool this pack needs
+# Setup
 
-This file is written for the AI agent (and works fine for humans). Work through it
-top to bottom on a fresh machine **before the first edit**. Every item has a CHECK
-command and a FIX. Run all checks at once with:
+Run the complete local example with one command:
 
 ```bash
-bash scripts/check-setup.sh
+bash scripts/setup.sh --demo
 ```
 
-**MCP servers: none required.** Everything runs through the CLI (ffmpeg, node,
-python) and plain REST APIs (ElevenLabs, optional Gemini, optional here.now).
-Two optional MCP-powered skills exist: `broll-capture` can use a **browser MCP**
-(Playwright or a browser extension) for no-code website captures — the bundled
-Puppeteer script covers the same ground without one — and `openart-broll` uses the
-**OpenArt MCP** for AI-generated footage/overlays. Everything else is MCP-free.
+This creates missing `.env` and `MASTER_CONTEXT.md` files, installs the locked
+`tools/video-qa` npm dependencies, checks prerequisites, then generates a tiny
+synthetic edit, a versioned review page, a searchable footage catalog, project
+state, and QA reports under a new `outputs/demo-*` directory. The demo makes no
+paid calls, downloads no models, and uploads nothing. Package installation needs
+network access on the first run; the demo itself works offline afterward.
 
----
+Python 3.10+, ffmpeg/ffprobe and Node.js 20+ with npm must already be installed.
+On macOS use Homebrew (`brew install python ffmpeg node`); on Linux use your
+package manager and a supported Node.js release. Linux distribution packages
+sometimes provide older Node versions; the doctor reports this explicitly.
+The shell entry points support macOS and Linux (or WSL on Windows).
 
-## Required — the pipeline does not run without these
+## Choose the workflow you need
 
-### 0. MASTER_CONTEXT.md + the projects directory
+```bash
+bash scripts/setup.sh --lane demo --dry-run
+bash scripts/setup.sh --lane demo --no-install
+bash scripts/check-setup.sh --lane demo
+```
 
-Copy `MASTER_CONTEXT.template.md` to `MASTER_CONTEXT.md` (gitignored) and fill in at least
-the brand block and the **projects directory** — the folder where per-project working
-folders (source, transcripts, comp, renders, `review/`, `_qa/`) are created. Default is
-`outputs/` in this pack; point it at your own media folder if the videos live elsewhere.
-`VIDEO_PROJECTS_DIR` in `.env` mirrors it for scripts.
+`--dry-run` prints the plan without writing files or installing anything.
+`--no-install` creates only missing local config and requested skill links, then
+reports missing prerequisites. Doctor checks are read-only and offline: no `npx`
+downloads, API requests, model downloads, or secret values in output.
 
-- CHECK: `test -f MASTER_CONTEXT.md && grep -c 'Projects directory' MASTER_CONTEXT.md`.
-- FIX: `cp MASTER_CONTEXT.template.md MASTER_CONTEXT.md` and fill it in with the user.
+| Lane | Required tools beyond Python and ffmpeg/ffprobe |
+| --- | --- |
+| `local` (default) | None; raw cuts, recap assembly and catalog ingestion |
+| `demo` | Node.js 20+, npm, locked video QA dependencies |
+| `qa` | Node.js 20+, npm, locked video QA dependencies |
+| `hyperframes` | Node.js 20+, npm, installed HyperFrames CLI |
+| `sound-design` | Node.js 20+, npm, ElevenLabs API key |
+| `all` | Everything above; choose only if using all those workflows |
 
-### 1. Node.js ≥ 20 (+ npx)
+ElevenLabs is required only for generated sound. Gemini, transcription backends,
+publishing credentials, and other generation services remain optional for the
+local/demo/QA workflows. Offline checks confirm configuration, not API access.
+No MCP server is required for the local pipeline.
 
-Runs HyperFrames, the caption generator, and the sound-design scripts.
+Setup never changes global packages or git configuration by default. Explicit
+`--install-system` allows Homebrew or Debian/Ubuntu apt installation of missing
+ffmpeg/Node prerequisites (Python must be installed first). It cannot be combined
+with `--no-install`. System installation may prompt through the package manager.
 
-- CHECK: `node -v` → v20 or newer; `npx --version` prints a version.
-- FIX: install from https://nodejs.org or `brew install node`.
+Local npm dependencies are installed with `npm ci` when missing or when the lock
+file changes. Existing matching installs are preserved. HyperFrames is optional;
+its lane installs under `tools/hyperframes/node_modules` if no installed CLI is
+found. Invoke that local binary directly, or add its `.bin` directory to PATH.
+Setup does not download transcription models or update personal agent skills.
 
-### 2. ffmpeg + ffprobe
+## Link skills into another working repo
 
-Every crop, EDL cut, audio measurement, frame extraction, and QA check.
+```bash
+bash scripts/setup.sh --no-install --link-skills /path/to/working-repo
+```
 
-- CHECK: `ffmpeg -version | head -1` and `ffprobe -version | head -1`.
-- FIX: `brew install ffmpeg` (macOS) / your package manager. Any recent build works;
-  the skills avoid libass/drawtext on purpose, so no special build flags are needed.
+Links are computed relative to the destination `.claude/skills/` directory.
+Existing files, directories and symlinks (including dangling links) are preserved.
+Rerunning setup is safe; it never replaces personal `.env` or `MASTER_CONTEXT.md`
+content. New `.env` files are created with owner-only permissions. Fill in your
+projects directory and editing preferences in `MASTER_CONTEXT.md` before a real
+edit; set `VIDEO_PROJECTS_DIR` in `.env` if scripts should use that location.
+Generated demo media always stays in its requested output directory, independent
+of your personal projects directory.
 
-### 3. HyperFrames (HTML→video renderer)
+## Run and inspect the demo
 
-The composition/render engine for `branded-ad-edit` and everything downstream.
-Installed on demand by npx — no global install.
+```bash
+bash scripts/demo.sh
+# Optional: choose a new directory. Existing output paths are never overwritten.
+bash scripts/demo.sh --output outputs/demo-first-run
+```
 
-- CHECK: `npx hyperframes --version` (first run downloads the package).
-- THEN: `npx hyperframes skills update talking-head-recut` — pulls the fonts +
-  `gsap.min.js` the composition templates expect.
-- Optional speedup: render with `PRODUCER_BROWSER_GPU_MODE=hardware`.
+Serve the printed review directory locally. It contains two real 4-second
+renders, a version picker, before/after comparison and a resolved sample note
+with frame evidence. Notes are stored in this browser; export revisions JSON to
+share them. The page uses JavaScript modules, and video seeking requires HTTP
+byte ranges. Use the printed local-server command:
 
-### 4. ELEVENLABS_API_KEY (`.env`)
+```bash
+python3 scripts/serve-review.py --directory outputs/demo-first-run/review --port 8765
+```
 
-Sound design: SFX generation (`/v1/sound-generation`) and music beds (`/v1/music`).
+Open `http://127.0.0.1:8765`. The server serves only the chosen directory, binds to
+the local machine, and supports seeking in both comparison videos. Use `--port 0`
+to choose a free port and print its URL. Stop the server with Ctrl-C. Publishing
+remains separate.
 
-- CHECK: `grep -c "^ELEVENLABS_API_KEY=.\+" .env` → 1.
-- FIX: `cp .env.example .env`, paste your key from https://elevenlabs.io
-  (Profile → API Keys). The scripts read it from `.env` / the environment; it is
-  never hardcoded. Generation spends ElevenLabs credits — the agent announces
-  before spending.
+The demo's source is a six-second ffmpeg test pattern and tone. The recap
+assembler places the ending before the opening, and a green card appears from
+1 to 3 seconds in v2. It verifies 120 output frames, exact pre-encode audio sample
+counts, decode, storyboard coverage and the card's actual pixels. It also writes
+`project.json`, `catalog.json`, `_qa/`, and a machine-readable `demo-result.json`.
+The transcript is empty because the fixture contains no speech; transcript QA is
+reported as degraded and semantic QA is skipped. The HTML file records intended overlay
+timing for the ffmpeg fixture; it is not a HyperFrames-rendered composition.
 
-### 5. Transcription (bundled — verify once)
+## Run regression checks
 
-Word-level transcripts drive captions, storyboards, and EDL cuts.
-`npx hyperframes transcribe <audio> --json --model small.en` manages its own
-whisper models — no separate install.
+```bash
+bash scripts/test.sh
+bash scripts/test.sh --integration
+```
 
-- CHECK: `npx hyperframes transcribe --help` exits 0.
-- Optional: a standalone `whisper-cli` (`brew install whisper-cpp`) + a ggml model
-  makes `video-qa` L2 seam re-probes faster, but is not required.
+The default runner tests setup safety, project/catalog behavior, review model and
+builder behavior, and the installed QA engine. Missing optional media/Node
+prerequisites are reported as skips. `--integration` requires the demo dependencies
+and additionally runs the full demo and recap assembler fixtures. Both commands
+are offline; live transcription/model checks are disabled. Individual suites can
+also be invoked directly, for example:
 
-### 6. python3
-
-EDL transcript remaps, QA envelope scans, reel-recut rendering.
-
-- CHECK: `python3 --version` → 3.10+.
-- Optional: PIL (`python3 -c "import PIL"`) for vignette/overlay PNG generation —
-  skills degrade gracefully without it. numpy + scipy for `ai-audio-sound-design`.
-
-### 6b. The QA engine (`tools/video-qa`)
-
-`video-qa`'s automated implementation: ffmpeg technical checks, transcript seam checks
-through the EDL, the optional Gemini pass, inspection packets. A standalone node package.
-
-- CHECK: `test -d tools/video-qa/node_modules && echo ok`.
-- FIX: `npm --prefix tools/video-qa install`. Then `npm --prefix tools/video-qa test`
-  (generates tiny ffmpeg fixtures on first run; the mid-word-cut case uses macOS `say`).
-- Run: `npm --prefix tools/video-qa run qa:video -- --video out.mp4` (see the skill for
-  the manifest lanes). From another working repo, alias it in that repo's `package.json`.
-
----
+```bash
+python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+npm --prefix tools/video-qa test
+npm --prefix tools/video-qa run typecheck
+```
 
 ## Optional — unlock specific stages
 
 ### 7. here.now (review-canvas delivery)
 
 `video-review-canvas` publishes the frame.io-style review page and reads timeline
-notes back. Without it, deliver cuts as files and collect notes as text.
+notes back. Without here.now, use a local canvas and export its review JSON, or
+deliver cuts as files and collect notes as text.
 
 - CHECK: `test -f ~/.herenow/credentials && echo ok`; publish script present at
   `~/.agents/skills/here-now/scripts/publish.sh` (or set `HERENOW_PUBLISH` to yours).
@@ -185,14 +214,11 @@ deny-list.
 
 ## First-session smoke test
 
-After the checks pass, prove the render path end to end (~1 minute):
-
 ```bash
-npx hyperframes --version
-bash scripts/check-setup.sh
+bash scripts/setup.sh --demo
 ```
 
-Then drop a video into the projects directory (or `footage/`) and say **"edit this video"**. The
-`video-edit-pipeline` skill takes over. If any stage fails on a missing tool, come
-back to this file — and record machine-specific quirks you discover in
-MASTER_CONTEXT.md so the next session doesn't rediscover them.
+After the synthetic example passes, put real source footage in your configured
+projects directory and ask the agent to edit it. Record machine-specific setup
+notes in the gitignored `MASTER_CONTEXT.md`. Keep real media and credentials out
+of commits; see the scrub-hook instructions above.

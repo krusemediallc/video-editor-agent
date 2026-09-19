@@ -26,13 +26,19 @@ gitignored `MASTER_CONTEXT.md`. The two never mix.
    source, transcripts, comp, renders, `review/`, `_qa/`) go in the projects directory named
    in MASTER_CONTEXT.md — default `outputs/` here, but often a media folder in the user's own
    working repo. `footage/` and `outputs/` are gitignored conveniences, not a rule.
+4. **Resume from receipts.** If a media project has `project.json`, run
+   `python3 tools/editor/editor.py project resume <project>` (using this pack's absolute
+   tool path from a working repo). Preserve its lane, version history and open notes;
+   rebuild stages whose inputs/artifacts changed. The pipeline skill documents checkpoints,
+   the reusable footage catalog and storyboard coverage. State files belong with the media,
+   not among this pack's tracked sources.
 
 ## Working-folder mode (a session started in another repo)
 
 Users commonly run Claude Code inside their own working repo and expose this pack's skills
-there as **relative symlinks** (`<repo>/.claude/skills/<name> → ../../../../Video Editor
-Agent/.claude/skills/<name>`; a `link-video-editor-skills.sh` helper in that repo keeps them
-current). In that mode:
+there as **relative symlinks**. Run
+`bash "<pack>/scripts/setup.sh" --no-install --link-skills "<working-repo>"` to compute
+the links for the actual directory layout without replacing existing paths. In that mode:
 
 - The skill files you are reading and editing are **this repo's files** — the symlink
   target. Edit them here, commit them here. Never copy a skill into the working repo; a
@@ -48,7 +54,8 @@ current). In that mode:
 ## Public-repo hygiene
 
 - `scripts/scrub-check.sh` runs as the pre-commit (staged files) and pre-push (all files)
-  hook once `git config core.hooksPath .githooks` is set (SETUP.md § 13). It refuses
+  hook once `git config core.hooksPath .githooks` is set (see the
+  [scrub-hook setup](SETUP.md#13-the-scrub-hook--before-your-first-commit)). It refuses
   secrets, private hosts, personal paths, e-mails, review-canvas slugs, fee amounts, media
   files, and anything in `scripts/scrub-denylist.local.txt` (gitignored: clients, people,
   private repo names). Fix the finding; `SCRUB_ALLOW=1` is a conscious, explained bypass.

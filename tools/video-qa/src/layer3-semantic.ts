@@ -175,15 +175,15 @@ export async function runSemanticLayer(
     return { status: "skipped", reason: "GEMINI_API_KEY not set", issues: [] };
   }
 
+  const dir = mkdtempSync(join(tmpdir(), "vqa-proxy-"));
+  try {
   const probe = await ffprobeJson(manifest.video);
   const duration = parseFloat(probe.format.duration ?? "0");
   const fps =
     opts.fps ??
     (process.env.VIDEO_QA_GEMINI_FPS ? Number(process.env.VIDEO_QA_GEMINI_FPS) : duration < 180 ? 5 : 1);
 
-  const dir = mkdtempSync(join(tmpdir(), "vqa-proxy-"));
   const proxyPath = join(dir, "proxy.mp4");
-  try {
     log(`[qa:L3] building 480p proxy (audio intact @128k)`);
     await makeProxy(manifest.video, proxyPath);
     log(`[qa:L3] uploading proxy; gemini reviewing ${duration.toFixed(1)}s @ ${fps}fps sampling (audio included)`);
@@ -233,6 +233,8 @@ export async function runSemanticLayer(
       issues,
       stats: { model: geminiModel(), fps, overallNotes: review.overallNotes, proxyDuration: duration },
     };
+  } catch (e) {
+    return { status: "skipped", reason: `Semantic QA unavailable: ${(e as Error).message.slice(0, 300)}`, issues: [] };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

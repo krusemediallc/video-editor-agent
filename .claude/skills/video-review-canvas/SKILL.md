@@ -2,7 +2,7 @@
 name: video-review-canvas
 description: >
   Publish a finished (or draft) video cut to a frame.io-style review canvas on here.now —
-  a player with a frame-accurate scrubber, click-the-timeline timestamped notes that persist,
+  a player with a frame-accurate scrubber, persistent timeline notes, version comparison, replies, resolution and evidence,
   and a clickable beat map — then read those notes back before the next cut. Use this to
   DELIVER any video edit for review: reel recuts, brand-deal edits, motion-graphics ads,
   carousel videos, YouTube cuts, sizzle reels. Trigger whenever a cut is ready to show, or on
@@ -138,16 +138,118 @@ throwaway `version` like `"probe"` — the page filters by version, so the probe
 node .claude/skills/video-review-canvas/scripts/read-notes.mjs <slug> [version]
 ```
 
-Prints every note sorted by timestamp. Work them in timeline order against the actual frames —
+Prints each note with its stable record ID, version, status, replies and evidence, sorted by version and timestamp. Work them in timeline order against the actual frames —
 seek to each one and look before deciding what it means. A round where you publish but never
 GET the store is a round of feedback silently dropped.
+
+## Version comparison and revision tracking
+
+Existing single-video configs still work, including `download`, `downloadName`,
+`downloadLabel` and additional `downloads`. Add `versions` to keep old media
+available at the same URL:
+
+```json
+{
+  "title": "Product launch ad",
+  "outDir": "review",
+  "version": "v2",
+  "author": "Reviewer",
+  "versions": [
+    {"version": "v1", "label": "First cut", "video": "output-v1.mp4",
+     "beats": [{"t": 0, "n": "Hook", "s": "Opening statement"}]},
+    {"version": "v2", "label": "Revised cut", "video": "output-v2.mp4"}
+  ],
+  "download": "output-v2.mp4",
+  "downloadName": "master-v2.mp4"
+}
+```
+
+Paths resolve relative to the config. Version IDs must be unique, filename-safe
+strings up to 20 characters. Each version is probed independently; use its own
+beat map. `version` selects the initial cut; it defaults to the last listed one.
+Each version's SHA-256 is saved in `review-config.json`. Before writing anything,
+the builder checks every existing version receipt and media filename. Rebuilding
+with the same bytes is allowed; changed media needs a new version ID and file.
+Receipts remain in the config for versions hidden from the picker. The guard also
+applies when a project title changes, the input is already inside the review
+directory, or a download alias would overwrite old version media, so existing
+comments/evidence retain their meaning.
+A selected comparison plays beside the main video, muted and synchronized to
+elapsed time plus the editable comparison offset. This is not automatic alignment
+of differently edited timelines. **Compare this change** uses a note's before/after
+evidence points to set the correct offset for that specific change.
+
+Every note has a stable record ID. Reviewers can reply, mark it resolved/reopen it,
+and attach before/after version + frame pairs with a description of the change.
+Evidence opens both actual rendered videos at those points. Retain those video
+versions in the config; a missing version is reported instead of seeking in the
+wrong cut. Notes from **all versions** are shown initially, with status and version
+filters. Frame pins store an integer frame, its unrounded `t = frame / fps`, and
+FPS. Use CFR review encodes for exact frame indexing; VFR sources should first be
+normalized for review. The model preserves fractional rates such as 30000/1001.
+
+The existing `comments` collection remains compatible. Replies, status changes
+and evidence append records to `reviewEvents`, keyed by `commentId`, without
+rewriting original feedback. Like the original comments, these collections allow
+public read/insert; no owner key is embedded in the browser. A shared review URL
+is a collaborative workspace, not authenticated sign-off. Republish the generated
+`.herenow/data.json` with the page to enable the new collection. Old sites without
+that collection can still be read. Load/save errors are visible and a failed load
+does not replace the currently displayed notes.
+
+### Agent readback and export
+
+The **Export review JSON** button downloads raw `comments`/`events` and a replayed
+`notes` list containing status, replies, evidence and history (`schemaVersion: 2`).
+The command-line reader uses the same replay model and follows paginated responses:
+
+```bash
+node .claude/skills/video-review-canvas/scripts/read-notes.mjs <slug> --json
+node .claude/skills/video-review-canvas/scripts/read-notes.mjs <slug> v1 --out revisions-v1.json
+node .claude/skills/video-review-canvas/scripts/read-notes.mjs --file review-revisions.json --json
+```
+
+Pass the record's stable `id` to any future event writer; never use its visible
+list number, timestamp alone or the new cut's absolute seconds as identity.
+
+### Local demo without publishing
+
+Set `"storage": {"mode": "local", "key": "my-review-demo"}` and serve the generated
+directory with a local HTTP server. This explicitly uses browser localStorage,
+with a visible local-only notice. Comments, replies, status and evidence survive
+refresh. The key isolates projects; keep it stable to resume a demo. Clearing site
+data clears this local review, so export JSON for backup or agent readback.
+The default is `{"mode":"remote"}` for here.now Site Data.
+
+Optional `reviewData` seeds a local demo only on its first use:
+
+```json
+{
+  "reviewData": {
+    "comments": [{"id":"note-1", "createdAt":"2026-09-18T12:00:00Z",
+      "data":{"version":"v1","t":1,"frame":30,"fps":30,
+        "text":"Tighten this pause.","author":"Reviewer"}}],
+    "events": [{"id":"event-1", "createdAt":"2026-09-18T12:01:00Z",
+      "data":{"commentId":"note-1","kind":"status",
+        "status":"resolved","author":"Editor"}}]
+  }
+}
+```
+
+`assets/review-model.mjs` is DOM-free and exposes `framePin`, `replayReviews`,
+`revisionExport`, `createLocalStore` and `createRemoteStore` for integrations.
+Run local coverage with:
+
+```bash
+node --test .claude/skills/video-review-canvas/tests/*.test.mjs
+```
 
 ## Shipping a new version
 
 1. Render the new cut as a **new file** — never overwrite an approved one.
 2. Bump `version` in the config (`v2`) and rebuild. The video filename gets the new suffix
-   automatically and the notes list filters to the new round, so old notes stop cluttering it
-   while staying in the store as history.
+   automatically and the version picker identifies the round. Include previous media in `versions`
+   for comparison. Notes from all versions remain visible by default; reviewers can filter them.
 3. Update `blurb` to say what changed in this cut — it's the changelog the reviewer reads first.
 4. Publish with `--slug` to the same URL.
 5. Reply, leading with the link, and say which of the reviewer's notes you addressed.
@@ -169,8 +271,8 @@ Each of these cost real time.
 | 1 | "Why isn't the new cut on here.now?" — the reviewer sees the old video | same video filename, so the browser serves its cache | version-stamp the filename every round (`build-canvas.mjs` does this); also bump the on-page version label so the round is visible |
 | 2 | `POST /.herenow/data/comments` → 403 `forbidden` from curl, but fine in the browser | public Site Data writes require a matching `Origin` header; browsers send it, curl doesn't | `-H "Origin: https://<slug>.here.now"` when testing by hand |
 | 3 | Can't delete a test record even with the owner bearer key | the delete op is refused regardless of `access.delete` | don't try — give throwaway records a distinct `version` and let the page's version filter hide them |
-| 4 | Notes from v1 clutter the v2 review | the store is append-only across rounds | the template filters on `version`; always bump it |
-| 5 | Notes land a beat late | the reviewer pins while playing, seeing a frame that's already gone | the composer pauses on open and stamps to 0.1s; keep the frame counter visible so the reviewer can verify |
+| 4 | Notes from v1 appear on v2 | the store intentionally keeps all rounds visible | use the Versions filter for the current cut; resolve addressed notes instead of hiding them |
+| 5 | Notes land a beat late | the reviewer pins while playing, seeing a frame that's already gone | the composer pauses and records the exact integer frame plus its unrounded timestamp; keep the frame counter visible so the reviewer can verify |
 | 6 | Beat map text runs together into one line | `.bn`/`.bs` are inline spans | they're `display:block` in the shipped template — keep it that way if you retint |
 | 7 | Script dies with `ENOENT` on a path containing `%20` | `new URL(import.meta.url).pathname` percent-encodes; project paths often contain spaces | `fileURLToPath(import.meta.url)` |
 | 8 | Canvas published but the reviewer never opened it | the reply buried the link or omitted it | first line of the reply is the bare URL |
@@ -182,7 +284,10 @@ Each of these cost real time.
 | [scripts/build-canvas.mjs](scripts/build-canvas.mjs) | config + video → publishable canvas dir (probes fps/duration, version-stamps the media) |
 | [scripts/read-notes.mjs](scripts/read-notes.mjs) | pull the pinned notes back off a published canvas |
 | [assets/canvas-template.html](assets/canvas-template.html) | the page itself — retint the three `--a1/2/3` accent tokens per project, leave the rest |
-| [assets/data.json](assets/data.json) | the here.now Site Data manifest that enables the notes collection |
+| [assets/data.json](assets/data.json) | the here.now comments + append-only review events manifest |
+| [assets/review-model.mjs](assets/review-model.mjs) | shared frame, event replay, persistence and export model |
+| [assets/review-app.mjs](assets/review-app.mjs) | version/compare playback, notes, replies, status and evidence UI |
+| [tests/review.test.mjs](tests/review.test.mjs) | local model, persistence, builder compatibility and escaping checks |
 
 Requires `ffprobe` (or `FFPROBE` env var), node >= 20, and here.now credentials at
 `~/.herenow/credentials` (the `here-now` skill's `publish.sh`). Related: `branded-ad-edit`,

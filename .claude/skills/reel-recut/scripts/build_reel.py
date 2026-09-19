@@ -7,7 +7,7 @@ One deterministic pass:
   2. (optional) silence-cut the talking-head pauses for the tight "talking over
      myself" feel, then remap every caption/callout onto the shortened timeline
   3. composite all graphics into ONE transparent overlay video (qtrle/argb)
-  4. final ffmpeg: select/aselect cut (if any) -> overlay graphics -> H.264
+  4. frame/sample-grid cuts through lossless batches -> overlay graphics -> H.264
 
 ALL visual styling (accent color, font, weights, sizes, positions) comes from the
 spec's optional "style" block. The defaults below are ONE example brand's values
@@ -35,8 +35,13 @@ environment variables.
 Usage:  python3 build_reel.py spec.json [--qa-manifest-only]
 See ../assets/spec.example.json for a complete example.
 """
-import json, os, sys, subprocess, re, shutil, urllib.request
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import json, os, sys, subprocess, re, shutil, urllib.request, math
+from pathlib import Path
+from cut_timeline import plan as plan_grid, render_base
+try:
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+except ImportError:
+    Image = ImageDraw = ImageFont = ImageFilter = None
 
 def _bin(env, name):
     """env var, else PATH, else the Homebrew location (non-login shells often lack it), else the bare name."""
@@ -302,6 +307,9 @@ def build(spec_path, manifest_only=False):
     W = int(spec.get("width", 1080)); H = int(spec.get("height", 1920))
 
     src = rel(spec["source"]); out = rel(spec["output"])
+    if not manifest_only and os.path.exists(out):
+        raise ValueError("Output already exists; choose a new version and file: " + out)
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     work = rel(spec.get("work_dir", "_reel_work")); os.makedirs(work, exist_ok=True)
     dur = spec.get("duration") or probe_duration(src)
 
@@ -313,6 +321,8 @@ def build(spec_path, manifest_only=False):
     banner_lines = spec.get("banner") or []
     # A spec with no graphics at all is a plain cut: skip the whole overlay pass.
     has_gfx = bool(banner_lines or captions or callouts)
+    if has_gfx and not manifest_only and Image is None:
+        raise ValueError("Graphics require Pillow; install pillow, or use a raw-cut spec")
     fp = None if (manifest_only or not has_gfx) else ensure_font(
         rel(spec.get("font", os.path.join(work, "font.ttf"))))
     banner = None
@@ -341,11 +351,13 @@ def build(spec_path, manifest_only=False):
     cuts.sort()
     keep, t = [], 0.0
     for ca, cb in cuts:
+        if not all(math.isfinite(v) for v in (ca, cb)) or ca < 0 or cb <= ca or cb > dur:
+            raise ValueError("Cut ranges must be finite, ordered and within the source duration")
         if ca > t: keep.append((t, ca))
         t = max(t, cb)
     if t < dur: keep.append((t, dur))
-    keep = [(round(s, 3), round(e, 3)) for s, e in keep if e - s > 0.02]
-    if not keep: keep = [(0.0, round(dur, 3))]
+    timeline = plan_grid(keep, FPS, int(spec.get("sample_rate", 48000)))
+    keep = timeline["keeps"]
     new_dur = sum(e - s for s, e in keep)
 
     def new_t(x):
@@ -389,24 +401,30 @@ def build(spec_path, manifest_only=False):
             for s, e, layer in cwins:
                 if s <= tn < e: fr = Image.alpha_composite(fr, layer)
             proc.stdin.write(fr.tobytes())
-        proc.stdin.close(); proc.wait()
+        proc.stdin.close()
+        if proc.wait() != 0:
+            raise ValueError("Overlay encoder failed; no final render was produced")
 
-    cutting = len(keep) > 1 or keep[0] != (0.0, round(dur, 3))
-    gfx_in = "[1:v]overlay=0:0" if has_gfx else "null"
+    cutting = bool(cuts) or abs(new_dur - dur) > 1e-6
+    gfx_in = "[1:v]overlay=0:0:shortest=1" if has_gfx else "null"
     if cutting:
-        expr = "+".join(f"between(t,{s},{e})" for s, e in keep)
-        filt = (f"[0:v]select='{expr}',setpts=N/FRAME_RATE/TB[vc];"
-                f"[0:a]aselect='{expr}',asetpts=N/SR/TB[ac];[vc]{gfx_in}[vout]")
-        amap, acodec = "[ac]", ["-c:a", "aac", "-b:a", "192k"]
-    else:
-        filt = f"[0:v]{gfx_in}[vout]" if has_gfx else "[0:v]null[vout]"
-        amap, acodec = "0:a", ["-c:a", "copy"]
+        cut_work = os.path.join(work, "cuts-" + Path(out).stem)
+        cut_output = os.path.join(cut_work, "base.mp4") if has_gfx else out
+        receipt = render_base(src, cut_output, cut_work, keep, FPS,
+                              int(spec.get("sample_rate", 48000)), spec.get("crf", 18),
+                              spec.get("preset", "veryfast"), FFMPEG, FFPROBE)
+        if not has_gfx:
+            print("OK:", out, json.dumps(receipt))
+            return
+        src = cut_output
+    filt = f"[0:v]{gfx_in}[vout]" if has_gfx else "[0:v]null[vout]"
+    amap, acodec = "0:a", ["-c:a", "copy"]
     filt_path = os.path.join(work, "filt.txt"); open(filt_path, "w").write(filt)
     inputs = ["-i", src] + (["-i", overlay] if has_gfx else [])
-    cmd = [FFMPEG, "-nostdin", "-y", *inputs,
+    cmd = [FFMPEG, "-nostdin", "-n", *inputs,
            "-filter_complex_script", filt_path, "-map", "[vout]", "-map", amap,
            "-c:v", "libx264", "-crf", str(spec.get("crf", 18)), "-preset", spec.get("preset", "veryfast"),
-           "-pix_fmt", "yuv420p", "-r", str(FPS), *acodec, "-movflags", "+faststart", out]
+           "-pix_fmt", "yuv420p", "-r", str(FPS), "-frames:v", str(timeline["totalFrames"]), *acodec, "-movflags", "+faststart", out]
     print(f"orig {dur:.2f}s -> new {new_dur:.2f}s | cuts={len(cuts)} keep={len(keep)} "
           f"fps={FPS:g} captions={len(cap_win)} callouts={len(cwins)}")
     rc = subprocess.call(cmd)

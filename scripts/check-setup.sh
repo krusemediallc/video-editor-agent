@@ -1,47 +1,9 @@
 #!/usr/bin/env bash
-# check-setup.sh — verify every tool/API this pack needs. Mirrors SETUP.md.
-# Exit 0 = all required present. Optional items report but never fail the run.
-set -u
-pass=0; fail=0; warn=0
-ok()   { printf "  PASS  %s\n" "$1"; pass=$((pass+1)); }
-bad()  { printf "  FAIL  %s\n" "$1"; fail=$((fail+1)); }
-opt()  { printf "  SKIP  %s (optional)\n" "$1"; warn=$((warn+1)); }
-
-echo "== required =="
-command -v node >/dev/null && [ "$(node -e 'console.log(process.versions.node.split(".")[0])')" -ge 20 ] \
-  && ok "node $(node -v)" || bad "node >= 20 (SETUP.md #1)"
-command -v ffmpeg >/dev/null && ok "ffmpeg" || bad "ffmpeg (SETUP.md #2)"
-command -v ffprobe >/dev/null && ok "ffprobe" || bad "ffprobe (SETUP.md #2)"
-npx --yes hyperframes --version >/dev/null 2>&1 \
-  && ok "hyperframes ($(npx --yes hyperframes --version 2>/dev/null | head -1))" \
-  || bad "npx hyperframes (SETUP.md #3)"
-if [ -f .env ] && grep -q "^ELEVENLABS_API_KEY=.\+" .env; then ok "ELEVENLABS_API_KEY in .env"
-else bad "ELEVENLABS_API_KEY in .env (SETUP.md #4)"; fi
-command -v python3 >/dev/null && ok "python3 $(python3 --version 2>&1 | cut -d' ' -f2)" || bad "python3 (SETUP.md #6)"
-[ -d tools/video-qa/node_modules ] && ok "video-qa engine installed" || bad "video-qa engine: npm --prefix tools/video-qa install (SETUP.md #6b)"
-[ -f MASTER_CONTEXT.md ] && ok "MASTER_CONTEXT.md present" || bad "MASTER_CONTEXT.md — copy the template and fill in the projects directory (SETUP.md #0)"
-
-echo "== optional =="
-python3 -c "import PIL" 2>/dev/null && ok "PIL" || opt "PIL — vignette/overlay PNGs"
-[ -f "$HOME/.herenow/credentials" ] && ok "here.now credentials" || opt "here.now — review canvas delivery (SETUP.md #7)"
-PUB="${HERENOW_PUBLISH:-$HOME/.agents/skills/here-now/scripts/publish.sh}"
-[ -f "$PUB" ] && ok "here-now publish.sh" || opt "here-now skill publish script (SETUP.md #7)"
-if [ -f .env ] && grep -q "^GEMINI_API_KEY=.\+" .env; then ok "GEMINI_API_KEY in .env"
-else opt "GEMINI_API_KEY — video-qa L3 (SETUP.md #8)"; fi
-"$HOME/.venvs/capcut/bin/python" -c "import pyJianYingDraft" 2>/dev/null \
-  && ok "pyJianYingDraft venv" || opt "pyJianYingDraft — capcut-export (SETUP.md #11)"
-command -v whisper-cli >/dev/null && ok "whisper-cli" || opt "whisper-cli — VAD cut planners + faster QA seam probes"
-if [ -f .env ] && grep -q "^OPENAI_API_KEY=.\+" .env; then ok "OPENAI_API_KEY in .env"
-else opt "OPENAI_API_KEY — cloud whisper fallback (SETUP.md #10c)"; fi
-command -v swiftc >/dev/null && ok "swiftc" || opt "swiftc — hook-variations AVFoundation probe (SETUP.md #12)"
-[ "$(git config core.hooksPath 2>/dev/null)" = ".githooks" ] && ok "scrub hook enabled" || opt "scrub hook — git config core.hooksPath .githooks (SETUP.md #13)"
-node -e "require.resolve('puppeteer')" 2>/dev/null && ok "puppeteer" || opt "puppeteer — broll-capture screenshots (SETUP.md #9)"
-[ -d "/Applications/Screen Studio.app" ] && ok "Screen Studio" || opt "Screen Studio — Lane C B-roll (SETUP.md #9)"
-printf "  NOTE  OpenArt MCP (openart-broll) — verify in-session: openart_account_get (SETUP.md #10)\n"
-if [ -f .env ] && grep -q "^ARCADS_API_KEY=.\+" .env; then ok "ARCADS_API_KEY in .env"
-else opt "ARCADS_API_KEY — arcads-broll generated B-roll (SETUP.md #10b)"; fi
-
-echo
-echo "$pass passed, $fail required missing, $warn optional skipped"
-[ "$fail" -eq 0 ] && echo "READY — required setup complete." || echo "NOT READY — fix the FAIL lines via SETUP.md."
-exit "$fail"
+# Read-only, offline dependency checks. No npx, installation, or credential output.
+set -euo pipefail
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo 'FAIL  Python 3.10+ is required. Install python3, then rerun this command.' >&2
+  exit 1
+fi
+exec python3 "$SCRIPT_DIR/setup.py" --check "$@"
