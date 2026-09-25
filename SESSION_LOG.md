@@ -1,5 +1,24 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-09-24 — Reference-grammar edit of an AI-clone clip; canvas symlink guard + single-collection fallback
+
+**What shipped:** a 25 s creator clip (an AI clone of the creator, generated in a node workflow) re-edited in the grammar of a
+reference reel: two native-style text stickers, three real-UI devices (cutaway with the base as an inset, a floating node card,
+a screenshot dissolve into a top-panel split with rings landing on the three nouns he lists), no captions, no music, source audio
+untouched. reel-style-clone forensics → one HyperFrames comp on the untouched base; 4-layer QA PASS; signed off on the canvas.
+
+**Skill changes (this commit):**
+- `video-review-canvas/scripts/build-canvas.mjs`: the `argv[1] === import.meta.url` entry guard compared a symlink path with the
+  real path, so a working repo that links this pack got exit 0, no output and no `review/`. Now compares real paths.
+- `video-review-canvas/assets/data-single.json` + gotchas 9–10: some here.now accounts reject a second Site Data collection
+  ("Invalid Site Data manifest"); copy the single-collection manifest over `.herenow/data.json` before publishing.
+- `reel-style-clone/references/method.md`: public IG reels via the `/embed/captioned/` page when the downloader is login-walled;
+  transpose text positions by the subject's face (a sticker at the reference's y landed on the eyes of a high-framed clone);
+  the native text-sticker lookalike as a named device (measured pill geometry, hard on/off).
+
+**QA lessons:** a translucent screenshot fading elsewhere than the panel it introduces reads as "tiled slices"; a 4-frame fade on a
+white sticker reads as "a dark box". Both fixed with hard swaps at the exact position.
+
 ## 2026-09-17 — Fifth round on the 3:00 organic edit: a censor bleep is placed from the waveform, not from any transcript
 
 The bleep lesson written earlier today (place it from an isolated slice) failed the reviewer the
