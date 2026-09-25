@@ -276,6 +276,8 @@ Each of these cost real time.
 | 6 | Beat map text runs together into one line | `.bn`/`.bs` are inline spans | they're `display:block` in the shipped template — keep it that way if you retint |
 | 7 | Script dies with `ENOENT` on a path containing `%20` | `new URL(import.meta.url).pathname` percent-encodes; project paths often contain spaces | `fileURLToPath(import.meta.url)` |
 | 8 | Canvas published but the reviewer never opened it | the reply buried the link or omitted it | first line of the reply is the bare URL |
+| 9 | `build-canvas.mjs` exits 0, prints nothing, creates no `review/` | the skill was invoked through a symlink and the old entry guard compared the link path with the real path | fixed (real-path compare); if you see it on an old copy, run the script by its `readlink -f` path |
+| 10 | `publish.sh` → `finalize failed: Invalid Site Data manifest` | the account only accepts ONE Site Data collection; the default manifest declares `comments` + `reviewEvents` | copy `assets/data-single.json` over `<outDir>/.herenow/data.json` before publishing (notes still work; the reply/resolve events have no store on that account) |
 
 ## Files
 

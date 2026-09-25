@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Build a review directory. Existing single-video configs and download(s) remain supported. */
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, statSync, openSync, readSync, closeSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, statSync, openSync, readSync, closeSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -137,7 +137,10 @@ export function buildCanvas(cfgPath, {probe: suppliedProbe} = {}) {
   return {outDir,config:browserConfig};
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// Compare real paths: when the skill is reached through a symlink (a working repo linking this pack in),
+// argv[1] is the link and import.meta.url the target, and a plain path compare silently does nothing.
+const isMain = (() => { try { return !!process.argv[1] && realpathSync(path.resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; } })();
+if (isMain) {
   if (!process.argv[2]) {console.error('usage: node build-canvas.mjs <config.json>'); process.exit(1);}
   const result = buildCanvas(process.argv[2]);
   console.log(`canvas built → ${result.outDir}\n  ${result.config.versions.length} version(s), active ${result.config.version}\n  storage: ${result.config.storage.mode}`);

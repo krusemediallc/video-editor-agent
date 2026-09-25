@@ -21,6 +21,11 @@ The user provides the file. If they only have a URL:
 - Do not build the analysis on a re-compressed preview thumbnail; caption
   stroke widths and grain read wrong.
 
+- Public Instagram reels: when the downloader is login-walled, the reel's public embed page
+  (`https://www.instagram.com/reel/<code>/embed/captioned/`, fetched with a mobile browser UA) carries a
+  `video_url` in its inline JSON (double-escaped `\\/` and `\u0026`; unescape, then fetch the CDN URL with
+  the same UA). It is the 720×1280 progressive file — enough for every measurement below.
+
 Normalize the name to `ref.mp4` so every command below is copy-paste.
 
 ## 2. Probe & cut detection
@@ -294,3 +299,17 @@ lines; appearance-only descriptions can only redecorate the original lines.
 Then hand `style-guide.md` to the build skill and stay available: review
 rounds will send you back to `evidence/` to settle "is that really what the
 reference does?" questions — that's why evidence is kept.
+
+**Transpose text positions by the subject's face, not by pixels.** A reference parks its stickers or
+captions where the *reference subject's* face is not. Measure the user's face box on gridded frames
+before placing anything: a clone or a walking selfie often carries the head in the top fifth of the
+frame, so a sticker at the reference's y sits on the eyes. Keep the reference's size, colour, radius
+and timing; move the y to the nearest clear band (chest level is the usual answer) and keep it inside
+the platform's safe zone. The "never cover the face" rule beats the reference's pixel position.
+
+**Named device — the native text-sticker lookalike.** Many creator reels carry platform-native text
+(a white pill, black text, lowercase, an emoji). Measured on one such reel: pill ≈ 0.71 w × 0.08 h,
+corner radius ≈ 0.12 × pill height (not fully rounded), text cap height ≈ 0.34 × pill height,
+medium/bold sans (Inter 700 at 70 px on a 1080 canvas is close), hard on / hard off (native stickers
+never fade; a 4-frame fade reads as a grey box in QA). Render it, or ship a sticker-free twin so the
+creator can add the real native text in the app.
