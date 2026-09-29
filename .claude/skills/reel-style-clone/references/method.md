@@ -26,6 +26,11 @@ The user provides the file. If they only have a URL:
   `video_url` in its inline JSON (double-escaped `\\/` and `\u0026`; unescape, then fetch the CDN URL with
   the same UA). It is the 720×1280 progressive file — enough for every measurement below.
 
+- **Age-gated reels cannot be fetched logged-out by any route** (embed page, share-token URL, yt-dlp,
+  a scraper's direct-URL run answers `restricted_page`). The Instagram scraper in *profile* mode still
+  returns `videoUrl` for the creator's non-restricted posts: pull two same-week reels as style proxies,
+  run the forensics on them, and say in the delivery which reels were measured (2026-09-28).
+
 Normalize the name to `ref.mp4` so every command below is copy-paste.
 
 ## 2. Probe & cut detection

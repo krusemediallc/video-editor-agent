@@ -162,6 +162,13 @@ than the one that made it, and read the surviving transcript end to end as prose
    word's burst (8 ms edges, concat of sample-exact trims, not amix), then prove it on the
    render: only the tone inside the window, the next burst intact after it.
 
+## Stutters hide from every transcript (read workflow.md § 5c)
+
+A take with ~60 ms false starts transcribes clean on every pass, and the seam QA passes it. The
+tell is a function word longer than 0.6 s in the cloud word list; the proof is a low-band vs
+high-band energy read (vowel vs fricative), never a second Whisper pass. Details in
+`references/workflow.md` § 5c.
+
 ## Seams click: declick every join, and cut both streams from the same numbers
 
 Hard butt-joins are audible. On a 180 s cut with 116 seams the sample-to-sample jump at the

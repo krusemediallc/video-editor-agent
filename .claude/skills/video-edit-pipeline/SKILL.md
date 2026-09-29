@@ -185,6 +185,20 @@ This is a loop, not a checklist. Order matters:
 
 Nothing ships that hasn't been verified as rendered pixels and measured audio.
 
+Three render-time traps (2026-09-28, an organic reel from an HDR phone):
+
+- **HDR sources (HLG / BT.2020, 10-bit) flip HyperFrames into an HDR layered composite that renders
+  only native video layers and DROPS every DOM image card, while `snapshot` still shows them.** The
+  log says `HDR auto-promotion triggered`. Render with `--sdr` (H.264 BT.709) and tile frames from
+  the MP4 before trusting it. A snapshot is not a render.
+- **The renderer's audio mixdown can land ~2.6 dB under the base.** For a cut that keeps the recorded
+  level, stream-copy the render's video and mux the assembler's own AAC (`-map 0:v -map 1:a -c copy`),
+  then re-measure integrated loudness and true peak.
+- **Judge legibility at phone width (≈ 390 px), not on the 1080 px comp.** A headline card survives
+  the 2.8× shrink; body text, charts and desktop-layout screen recordings do not. Record scrolls at a
+  540 px viewport with device scale 2 (same output size, double the text) and crop cards to the one
+  sentence that carries the beat.
+
 ## Stage 5 — Deliver
 
 Invoke **video-review-canvas** to publish the video to a here.now review page

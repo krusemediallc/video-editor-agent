@@ -95,6 +95,23 @@ The proven fallback: record the user's REAL logged-in browser.
 
 ---
 
+## Lane D — Public social posts and reaction GIFs without a login (2026-09-28)
+
+- **X posts render through the public embed page** `https://platform.twitter.com/embed/Tweet.html?dnt=true&id=<id>&lang=en&theme=light&hideThread=true`
+  (Puppeteer, 420 px viewport, device scale 2 so the text wraps large enough for a phone). Clip from
+  the `User-Name` row to the **first** `tweetText` (the last one is a quoted post). Triage a post
+  before capturing it with `https://cdn.syndication.twimg.com/tweet-result?id=<id>&token=a`: text,
+  likes, the parent post, `photos[]` urls and `video.variants[]` (pick the highest bitrate; portrait
+  1080×1920 variants exist for phone-shot posts and drop straight in as takeovers).
+- **Reaction GIFs:** GIPHY's published beta key is banned and Tenor's API is discontinued. giphy.com's
+  own search calls `api.giphy.com/v1/gifs/search` with a key visible in its page requests; read it from
+  a headless page (`page.on("request")`) and search from there (rating pg-13), then loop the mp4 to the
+  beat with `-stream_loop`. Prefer brand-, artist- and creator-made loops over film and TV frames, and
+  check the loop's last frame for a channel watermark before using it.
+- **Scroll recordings:** when Playwright's browser is missing, Puppeteer's `page.screencast()` at a
+  540×960 viewport with device scale 2 gives a clean 30 fps portrait recording; re-encode with a dense
+  GOP before the comp.
+
 ## Where captures go
 
 `assets/shots/*.png` for stills, `media/broll/*.mp4` for clips. In compositions,

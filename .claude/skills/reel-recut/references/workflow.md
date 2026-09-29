@@ -182,6 +182,27 @@ Interpreting a flagged seam:
 Fix by editing the spec (nudge a cut ≤500ms, retime a caption, remove a duplicate),
 re-render, re-verify; stop after 3 rounds and surface what's left to the user.
 
+### 5c. Stutters that every transcript smooths over (learned 2026-09-28)
+
+A blown take with two or three ~60 ms false starts ("of a f-, f-, phenomenon") passes `verify_cuts.py`,
+both QA lanes and a full re-transcription of the render: Whisper folds the bursts into one long vowel.
+Three checks catch it, in this order:
+
+1. **The tell in the word list:** a function word ("a", "the", "of") with a duration > 0.6 s in the
+   cloud transcript is a smoothed false start. Scan every project's word JSON for it before the cut.
+2. **The anatomy, not the transcript.** Per 10 ms window compute energy < 1 kHz and 3–8 kHz. A vowel is
+   loud low-band; a false start of the next word is a *fricative burst (high band) followed by a short
+   vowel*. The article you must keep is the voiced tail of the previous word; the cut runs from the end
+   of that tail to the true onset of the next word.
+3. **Whisper is not a tiebreaker.** Two candidate cuts that differ by one syllable transcribe
+   identically on isolated slices. Decide from the band read (and the reviewer's ear), then verify the
+   seam on the rendered file by isolated re-transcription and a 20 ms envelope.
+
+Also from the same edit: after `plan_cuts.py`, a second pass on the RENDERED cut that walks out from
+each join while the 5 ms RMS stays under floor + 9 dB and keeps 15 ms a side turns 100–165 ms of
+"air" the VAD counted as speech into the 30 ms house pace (`tighten-seams.py` pattern; generic version
+belongs in `plan_cuts.py --reclaim-db`).
+
 ## 6. QA without a video player
 - Extract frames: `ffmpeg -ss <t> -i out.mp4 -frames:v 1 q.png`, then read them.
 - Pixel-check a callout/banner: sample its band for the spec's `accent_color`.

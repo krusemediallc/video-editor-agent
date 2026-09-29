@@ -198,6 +198,23 @@ rounds**, then stop and escalate. Never loop on LOW or subjective issues.
 
 ## Calibration notes (from live runs)
 
+- **A static full-frame takeover is a `frozen_frames` HIGH, and it reads dead to a viewer too.** A dark
+  layer with two still cards passed while karaoke captions animated under it and failed the moment the
+  captions were removed; a video takeover that holds on a chat bubble for ~1 s failed the same way. Give
+  every takeover motion (a slow scale/translate drift, 1 → 1.03–1.12 over its window) and confirm with
+  `freezedetect=n=0.003:d=0.5` on the whole rendered file before the engine runs (2026-09-28).
+- **L3 (Gemini at 5 fps) reports a 0.18 s pop-in as a "corrupted title card".** Frame-check the first
+  15 frames of the render at 1:1 before treating an L3 `visual_glitch` inside the first 0.3 s as real.
+- **Downscaled contact tiles lie about glyphs.** A 300 px tile showed "The?"; the full-resolution
+  frame read "The". Confirm any text defect at 1:1.
+- **Second-model audit before delivery (2026-09-28).** The four layers passed a master with a real
+  blown take (three ~60 ms false starts; see reel-recut workflow § 5c). A pro-tier model that
+  *hears the audio at full rate* (the video through the Files API, not the 5 fps 480p proxy) caught it;
+  a second model given frame sheets + transcript caught a semantic mismatch instead (B-roll of a
+  different task under a first-person claim). Run both as an audit pass on the master with a prompt
+  that states the deliberate choices (no text, 30 ms joins, allowed face cover) so they critique the
+  execution, not the brief; cross-check every finding in pixels or in the envelope before acting.
+
 - A shipped-clean reel with 49 silence-derived cuts must come back PASS with zero HIGH —
   keep a known-clean video as your false-positive canary.
 - A known-dirty pre-fix edit: the L3 pass heard both documented seam flubs (a false-start
