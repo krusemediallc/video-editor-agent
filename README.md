@@ -130,6 +130,7 @@ and point it at this pack instead of copying skills into it:
 | Puppeteer (optional) | scripted website screenshots/B-roll (`broll-capture`) | `npm i puppeteer` in the repo; or use a connected browser MCP instead |
 | Screen Studio (optional) | high-fidelity real-browser B-roll (`broll-capture` Lane C) | any screen recorder works; Screen Studio + its CLI is the polished path |
 | OpenArt MCP (optional) | AI-generated B-roll / talking heads / overlays (`openart-broll`) | connect the OpenArt MCP in your client; verify with `openart_account_get` — no API key |
+| ComfyUI (optional, local GPU) | free still images — covers, thumbnails, backgrounds (`image-generation`) | ComfyUI Portable + Z-Image Turbo models, `COMFYUI_DIR` in `.env`; check `python3 tools/image-gen/comfy_gen.py --check --start` |
 | Arcads (optional) | generated B-roll (`arcads-broll`) and the `arcads-video-edit` clip lane | `ARCADS_API_KEY` / `ARCADS_BASIC_AUTH` in `.env` + clone [arcads-claude-code](https://github.com/krusemediallc/arcads-claude-code) alongside |
 | Swift toolchain (optional) | `hook-variations`' AVFoundation probe (`avtest`) | Xcode command-line tools; built on first use |
 | pyJianYingDraft in a venv (optional) | CapCut draft export | only needed for the capcut-export handoff |
@@ -159,6 +160,7 @@ HyperFrames, whisper models, or ffmpeg.
 | `broll-capture` | Website screenshots + B-roll: Puppeteer/Playwright-MCP full-page shots, scripted-scroll recordings, and a Screen Studio real-browser lane for automation-blocked sites. |
 | `openart-broll` | GENERATED B-roll, identity-referenced talking heads, and screen-blend overlays via the **OpenArt MCP** — the pipeline's primary generation lane. |
 | `arcads-broll` | Alternative generation backend via the Arcads external API (REST) — companion pack: [arcads-claude-code](https://github.com/krusemediallc/arcads-claude-code). |
+| `image-generation` | FREE still images on a local ComfyUI server (Z-Image Turbo): covers, thumbnails, backgrounds, concept frames — no API key, no per-image cost. |
 | `capcut-export` | Layered export into a CapCut draft via pyJianYingDraft. |
 
 ## Limitations (honest)

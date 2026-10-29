@@ -31,6 +31,7 @@ every real edit without ever carrying the edit's private details.
   broll-capture/           # real-website screenshots and scroll recordings
   openart-broll/           # generated b-roll / overlays via the OpenArt MCP
   arcads-broll/            # generated b-roll / overlays via the Arcads REST API
+  image-generation/        # free still images on a local ComfyUI (Z-Image Turbo), tools/image-gen
   video-qa/                # the 4-layer QA procedure (what tools/video-qa automates)
   video-review-canvas/     # here.now review page + timeline-comment readback
   capcut-export/           # layered export to a CapCut draft (WIP)

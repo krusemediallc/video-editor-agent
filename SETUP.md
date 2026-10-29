@@ -172,6 +172,14 @@ candidate issues. Skipped gracefully when unset; QA layers 1/2/4 still run.
 - FIX: key from your Arcads account (sign up: https://arcads.ai/?via=claude-code).
   Generation spends Arcads credits — the skill estimates and asks before firing.
 
+### 10d. ComfyUI (image-generation) — free local still images
+
+- CHECK: `python3 tools/image-gen/comfy_gen.py --check --start` prints `OK … | <GPU> | <models>`.
+- FIX: download `ComfyUI_windows_portable_nvidia.7z` from the Comfy-Org/ComfyUI GitHub
+  releases, extract, set `COMFYUI_DIR` in `.env`, and put the Z-Image Turbo files in
+  `ComfyUI/models/` (list in `.claude/skills/image-generation/SKILL.md`, Setup). ~12 GB
+  on disk; needs an NVIDIA GPU with ~8 GB+ VRAM. No API key, no per-image cost.
+
 ### 10c. OPENAI_API_KEY (`.env`) — cloud whisper fallback
 
 Used only when whisper.cpp is unavailable: the QA engine's transcriber, `hook-splitter`'s

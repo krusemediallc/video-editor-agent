@@ -1,5 +1,17 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-10-29 — New skill: image-generation (free still images on a local ComfyUI)
+
+- Added `image-generation` + `tools/image-gen/comfy_gen.py` (stdlib; ComfyUI HTTP API,
+  Z-Image Turbo graph, `--start` launches the portable server headless, `--check`).
+- Chose local ComfyUI over hosted skills: the top-installed "ai-image-generation" skills
+  are paid inference.sh wrappers; the ComfyUI skill on skills.sh failed a trust audit.
+- Lesson: the ComfyUI portable NVIDIA build ships torch cu130 (driver 580+). On an older
+  driver it dies with an access violation in `torch.cuda` at import — swap the embedded
+  wheel to cu128 (torch 2.11.0). Documented in the skill's Troubleshooting.
+- Did not register the comfyui-mcp server: ~90 tools in every session's context for
+  what one script does.
+
 ## 2026-10-26 — New skill: edits-hook-overlay (native Instagram text, made once, reused on many videos)
 
 **Goal:** Get the Edits app's native text hook onto many videos without opening each one in Edits.
