@@ -23,6 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent
 def run(command, allowed=(0,), capture=False):
     command = [str(item) for item in command]
     print("RUN  " + shlex.join(command), flush=True)
+    # Windows: subprocess does not apply PATHEXT, so a bare "npm" misses npm.cmd.
+    command[0] = shutil.which(command[0]) or command[0]
     result = subprocess.run(command, cwd=ROOT, capture_output=capture, text=capture)
     if result.returncode not in allowed:
         if capture:
