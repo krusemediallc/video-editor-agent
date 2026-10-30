@@ -1,5 +1,20 @@
 # SESSION LOG — Video Editor Agent
 
+## 2026-10-30 — Windows first-run: setup/demo and FFmpeg 8+ filter-script flag
+
+**Goal:** `bash scripts/setup.sh --demo` on a fresh Windows 11 machine (Git Bash).
+
+**Done:** `setup.py` / `demo.py` `run()` resolve the executable with `shutil.which` (subprocess ignores PATHEXT, so a
+bare `npm` missed `npm.cmd`). Current FFmpeg builds (9.0.2, nightly) dropped `-filter_complex_script`; `assemble.py`
+(recap-video), `cut_timeline.py` and `build_reel.py` (reel-recut) now pick `-/filter_complex` when `-h long` no longer
+lists the old flag, keeping 6.x (no `-/opt` syntax) working.
+
+**Validation:** demo completes end to end (base cut verified, QA PASS_WITH_WARNINGS, canvas built), doctor 7/7.
+
+**Gotchas found:** Windows ships `python`/`python3` as Microsoft Store stubs; `scripts/test.sh` setup tests fail on
+Windows without symlink privilege (Developer Mode) and on the 0600 `.env` mode assertion. The reel-recut path is not
+exercised by the demo.
+
 ## 2026-10-26 — New skill: edits-hook-overlay (native Instagram text, made once, reused on many videos)
 
 **Goal:** Get the Edits app's native text hook onto many videos without opening each one in Edits.

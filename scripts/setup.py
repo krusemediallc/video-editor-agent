@@ -15,7 +15,10 @@ LANES = ("local", "demo", "qa", "hyperframes", "sound-design", "all")
 
 
 def run(command, **kwargs):
-    return subprocess.run([str(x) for x in command], check=True, **kwargs)
+    command = [str(x) for x in command]
+    # Windows: subprocess does not apply PATHEXT, so a bare "npm" misses npm.cmd.
+    command[0] = shutil.which(command[0]) or command[0]
+    return subprocess.run(command, check=True, **kwargs)
 
 
 def binary(name):

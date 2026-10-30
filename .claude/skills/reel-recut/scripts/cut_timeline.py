@@ -22,6 +22,13 @@ def run(argv):
     return result.stdout
 
 
+def filter_script_flag(ffmpeg):
+    # FFmpeg 7+ reads any option from a file as "-/opt"; newer builds dropped
+    # -filter_complex_script, while 6.x (still common via apt) lacks "-/opt".
+    help_text = subprocess.run([str(ffmpeg), "-hide_banner", "-h", "long"], text=True, capture_output=True).stdout
+    return "-filter_complex_script" if "filter_complex_script" in help_text else "-/filter_complex"
+
+
 def plan(keeps, fps=30, sample_rate=48000):
     rate = Fraction(str(fps)).limit_denominator(100000)
     if rate <= 0 or rate > 240 or sample_rate < 8000:
@@ -89,7 +96,7 @@ def render_base(source, output, work, keeps, fps=30, sample_rate=48000, crf=18,
         graph.write_text(";\n".join(filters))
         chunk = work / f"batch-{len(chunks):04}.mkv"
         run([ffmpeg, "-nostdin", "-v", "error", "-n", *inputs, "-filter_complex_threads", "1",
-             "-filter_complex_script", graph, "-map", "[v]", "-map", "[a]", "-c:v", "ffv1", "-threads", "1",
+             filter_script_flag(ffmpeg), graph, "-map", "[v]", "-map", "[a]", "-c:v", "ffv1", "-threads", "1",
              "-pix_fmt", "yuv420p", "-r", str(rate), "-c:a", "pcm_s16le", "-ar", sample_rate, chunk])
         chunks.append(chunk)
     # Relative generated filenames avoid quoting arbitrary source paths in concat syntax.
